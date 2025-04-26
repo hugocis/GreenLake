@@ -14,3 +14,69 @@ datasource db {
 }
 
 
+model Infrastructure_daycare {
+  infra_id              String  @id @default(uuid())
+  child_capacity        Int
+  eco_friendly_toys     Boolean
+  age_range             String  @db.VarChar(20)
+  organic_food          Boolean
+  outdoor_learning_space Boolean
+}
+
+model Infrastructure_auto_service {
+  infra_id              String  @id @default(uuid())
+  eco_friendly_services Boolean
+  electric_vehicle_charging Boolean
+  bay_count             Int
+  recycling_program     Boolean
+}
+
+model Infrastructure_government_building {
+  infra_id                   String  @id @default(uuid())
+  green_roof                 Boolean
+  energy_efficient_heating   Boolean
+  water_conservation_systems Boolean
+}
+
+model Infrastructure_laundromat {
+  infra_id                  String  @id @default(uuid())
+  washer_count              Int
+  dryer_count               Int
+  is_24hour                 Boolean
+  energy_efficient_machines Boolean
+  water_recycling_system    Boolean
+  eco_friendly_detergents   Boolean
+}
+
+model Infrastructure_healthcare_clinic {
+  infra_id                    String  @id @default(uuid())
+  examination_rooms           Int
+  telemedicine_capabilities   Boolean
+  sustainable_waste_disposal  Boolean
+  staff_count                 Int
+  energy_efficient_medical_equipment Boolean
+}
+
+model Infrastructure_gas_station {
+  infra_id                String  @id @default(uuid())
+  electric_vehicle_charging Boolean
+  biofuel_availability    Boolean
+  pump_count              Int
+  has_convenience_store   Boolean
+  solar_powered           Boolean
+}
+
+model Events {
+  id                             Int     @id @default(autoincrement())
+  has_emergency_exits            Boolean
+  has_first_aid                  Boolean
+  has_smoking_area               Boolean
+  virtual_attendance_option      Boolean
+  early_bird_discount            Boolean
+  senior_discount_available      Boolean
+  setup_days_required            Int
+  local_accommodation_partners   Int
+  return_attendee_percentage     Float
+  early_registration_discount_percentage Float
+  // Aquí puedes agregar las otras 80 columnas que menciona el diagrama...
+}
