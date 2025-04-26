@@ -48,7 +48,7 @@ export default function RestaurantSection() {
     async function fetchRestaurants() {
       try {
         setLoading(true);
-        const response = await RestaurantAPI.getAllRestaurants({ limit: 10 });
+        const response = await RestaurantAPI.getAllRestaurants({ limit: 6 });
         const transformedRestaurants = transformApiRestaurants(response.data);
         setRestaurants(transformedRestaurants);
         setError(null);
@@ -73,7 +73,7 @@ export default function RestaurantSection() {
       async function reloadRestaurants() {
         try {
           setLoading(true);
-          const response = await RestaurantAPI.getAllRestaurants({ limit: 10 });
+          const response = await RestaurantAPI.getAllRestaurants({ limit: 6 });
           const transformedRestaurants = transformApiRestaurants(response.data);
           setRestaurants(transformedRestaurants);
         } catch (error) {
@@ -107,7 +107,7 @@ export default function RestaurantSection() {
       async function fetchWasteReductionRestaurants() {
         try {
           setLoading(true);
-          const response = await RestaurantAPI.getAllRestaurants({ wasteReduction: true, limit: 10 });
+          const response = await RestaurantAPI.getAllRestaurants({ wasteReduction: true, limit: 6 });
           const transformedRestaurants = transformApiRestaurants(response.data);
           setRestaurants(transformedRestaurants.length > 0 ? transformedRestaurants : []);
         } catch (error) {
@@ -124,7 +124,7 @@ export default function RestaurantSection() {
       async function fetchPremiumRestaurants() {
         try {
           setLoading(true);
-          const response = await RestaurantAPI.getAllRestaurants({ priceCategory: "$$$", limit: 10 });
+          const response = await RestaurantAPI.getAllRestaurants({ priceCategory: "$$$", limit: 6 });
           const transformedRestaurants = transformApiRestaurants(response.data);
           setRestaurants(transformedRestaurants.length > 0 ? transformedRestaurants : []);
         } catch (error) {

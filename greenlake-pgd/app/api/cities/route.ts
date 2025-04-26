@@ -26,17 +26,8 @@ export async function GET(req: NextRequest) {
       filter.state_id = stateId;
     }
     
-    if (minPopulation !== null) {
-      filter.population = {
-        gte: minPopulation,
-      };
-    }
-    
-    if (minGreenScore !== null) {
-      filter.green_score = {
-        gte: minGreenScore,
-      };
-    }
+    // These filters need to be adjusted as these fields don't exist in the schema
+    // Removing the population and green_score filters as they aren't in the schema
 
     // Query to get total count for pagination
     const totalCount = await prisma.cities.count({
@@ -88,23 +79,31 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
     
+    // Validate location data if provided
+    if (body.location && typeof body.location !== 'object') {
+      return NextResponse.json({
+      error: "Location must be a valid geometry object"
+      }, { status: 400 });
+    }
+    
+    // Check if state_id exists
+    if (body.state_id) {
+      const state = await prisma.states.findUnique({
+      where: { id: body.state_id }
+      });
+      if (!state) {
+      return NextResponse.json({ 
+        error: "Invalid state_id provided" 
+      }, { status: 400 });
+      }
+    }
     // Create the city
     const city = await prisma.cities.create({
       data: {
         name: body.name,
         state_id: body.state_id,
-        population: body.population || null,
-        green_score: body.green_score || null,
-        renewable_energy_percentage: body.renewable_energy_percentage || null,
-        public_transport_satisfaction: body.public_transport_satisfaction || null,
-        cycling_friendliness: body.cycling_friendliness || null,
-        waste_recycling_percentage: body.waste_recycling_percentage || null,
-        air_quality_score: body.air_quality_score || null,
-        water_quality_score: body.water_quality_score || null,
-        green_area_per_capita: body.green_area_per_capita || null,
-      },
-      include: {
-        states: true,
+        capital: body.capital || null,
+        has_harbor: body.has_harbor || null,
       },
     });
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import crypto from 'crypto';
 
 // GET handler to fetch transportation hub infrastructures
 export async function GET(req: NextRequest) {
@@ -11,52 +12,40 @@ export async function GET(req: NextRequest) {
     const hasBikeParking = searchParams.get('hasBikeParking') === 'true';
     const isPedestrianFriendly = searchParams.get('isPedestrianFriendly') === 'true';
     const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
-
-    // Build filter object for infrastructure table
-    const infrastructureFilter: any = {
-      type: 'transportation_hub',
+    const offset = parseInt(searchParams.get('offset') || '0');    // Build filter object
+    const where: any = {
+      infrastructure_transportation_hub: {}
     };
     
     if (cityId) {
-      infrastructureFilter.city_id = cityId;
+      where.city_id = cityId;
     }
 
-    // Build filter object for transportation_hub table
-    const transportationHubFilter: any = {};
-    
+    // Add specific filters for transportation hub
     if (hubType) {
-      transportationHubFilter.hub_type = hubType;
+      where.infrastructure_transportation_hub.hub_type = hubType;
     }
     if (hasChargingStation) {
-      transportationHubFilter.electric_vehicle_charging_stations = true;
+      where.infrastructure_transportation_hub.electric_vehicle_charging = true;
     }
     if (hasBikeParking) {
-      transportationHubFilter.bike_parking_spaces = { gt: 0 };
+      where.infrastructure_transportation_hub.bike_sharing_station = true;
     }
     if (isPedestrianFriendly) {
-      transportationHubFilter.pedestrian_friendly_design = true;
+      where.infrastructure_transportation_hub.public_transportation_access = true;
     }
 
     // Fetch transportation hubs with their infrastructure details
     const [transportationHubs, count] = await Promise.all([
       prisma.infrastructure.findMany({
-        where: infrastructureFilter,
+        where,
         include: {
-          infrastructure_transportation_hub: {
-            where: transportationHubFilter,
-          }
+          infrastructure_transportation_hub: true
         },
         take: limit,
         skip: offset,
-      }),
-      prisma.infrastructure.count({
-        where: {
-          ...infrastructureFilter,
-          infrastructure_transportation_hub: {
-            some: transportationHubFilter
-          }
-        },
+      }),      prisma.infrastructure.count({
+        where,
       }),
     ]);
 
@@ -76,27 +65,23 @@ export async function GET(req: NextRequest) {
 
 // POST handler to create a new transportation hub
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
+  try {    const body = await req.json();
     const { 
-      name, cityId, greenScore, hubType, passengerCapacityPerDay,
-      electricVehicleChargingStations, bikeParkingSpaces, pedestrianFriendlyDesign 
-    } = body;
-
-    // Create infrastructure entry
+      name, cityId, greenScore, 
+      electricVehicleCharging, publicTransportationAccess, bikeSharingStation 
+    } = body;    // Create infrastructure entry
     const infrastructure = await prisma.infrastructure.create({
       data: {
+        id: body.id || crypto.randomUUID(), // Asegurarse de que haya un ID
         type: 'transportation_hub',
         name: name,
         city_id: cityId,
         green_score: greenScore,
         infrastructure_transportation_hub: {
           create: {
-            hub_type: hubType,
-            passenger_capacity_per_day: passengerCapacityPerDay,
-            electric_vehicle_charging_stations: electricVehicleChargingStations || false,
-            bike_parking_spaces: bikeParkingSpaces || 0,
-            pedestrian_friendly_design: pedestrianFriendlyDesign || false,
+            electric_vehicle_charging: electricVehicleCharging || false,
+            public_transportation_access: publicTransportationAccess || false,
+            bike_sharing_station: bikeSharingStation || false,
           }
         }
       },

@@ -10,46 +10,36 @@ export async function GET(req: NextRequest) {
     const hasLocalOrganicIngredients = searchParams.get('localOrganicIngredients') === 'true';
     const hasWasteReduction = searchParams.get('wasteReduction') === 'true';
     const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
-
-    // Build filter object for infrastructure table
-    const infrastructureFilter: any = {
-      type: 'restaurant',
+    const offset = parseInt(searchParams.get('offset') || '0');    // Build filter object
+    const where: any = {
+      infrastructure_restaurant: {}
     };
     
     if (cityId) {
-      infrastructureFilter.city_id = cityId;
+      where.city_id = cityId;
     }
-
-    // Build filter object for restaurant specific data
-    const restaurantFilter: any = {};
     
+    // Añadir filtros específicos de restaurante
     if (priceCategory) {
-      restaurantFilter.price_category = priceCategory;
+      where.infrastructure_restaurant.price_category = priceCategory;
     }
     
     if (searchParams.has('localOrganicIngredients')) {
-      restaurantFilter.local_organic_ingredients = hasLocalOrganicIngredients;
+      where.infrastructure_restaurant.local_organic_ingredients = hasLocalOrganicIngredients;
     }
     
     if (searchParams.has('wasteReduction')) {
-      restaurantFilter.waste_reduction_program = hasWasteReduction;
+      where.infrastructure_restaurant.waste_reduction_program = hasWasteReduction;
     }
 
     // Query to get total count for pagination
     const totalCount = await prisma.infrastructure.count({
-      where: {
-        ...infrastructureFilter,
-        infrastructure_restaurant: restaurantFilter,
-      },
+      where,
     });
 
     // Main query with pagination and filters
     const restaurants = await prisma.infrastructure.findMany({
-      where: {
-        ...infrastructureFilter,
-        infrastructure_restaurant: restaurantFilter,
-      },
+      where,
       include: {
         cities: true,
         infrastructure_restaurant: true,

@@ -12,11 +12,13 @@ import {
   InfrastructurePark,
   InfrastructureTransportationHub,
   TransportRoute,
+  ElectricRentalVehicle,
   CreateRestaurantRequest,
   CreateHotelRequest,
   CreateParkRequest,
   CreateTransportationHubRequest,
   CreateTransportRouteRequest,
+  CreateElectricVehicleRequest,
 } from '@/lib/types';
 
 // Base fetch function with error handling
@@ -194,6 +196,30 @@ export const TransportRouteAPI = {
 
   createTransportRoute: async (data: CreateTransportRouteRequest) => {
     return fetchAPI<SingleResponse<TransportRoute>>('/transport-routes', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// Electric Rental Vehicle API calls
+export const ElectricVehicleAPI = {
+  getAllVehicles: async (params?: {
+    cityId?: string;
+    vehicleType?: string;
+    make?: string;
+    model?: string;
+    minElectricRange?: number;
+    maxRentalCost?: number;
+    minCapacity?: number;
+    limit?: number;
+  }) => {
+    const queryParams = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    return fetchAPI<PaginatedResponse<ElectricRentalVehicle>>(`/vehicles${queryParams}`);
+  },
+
+  createVehicle: async (data: CreateElectricVehicleRequest) => {
+    return fetchAPI<SingleResponse<ElectricRentalVehicle>>('/vehicles', {
       method: 'POST',
       body: JSON.stringify(data),
     });

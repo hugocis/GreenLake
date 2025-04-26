@@ -69,7 +69,7 @@ export default function ParkSection() {
     async function fetchParks() {
       try {
         setLoading(true);
-        const response = await ParkAPI.getAllParks({ limit: 10 });
+        const response = await ParkAPI.getAllParks({ limit: 6 });
         const transformedParks = transformApiParks(response.data);
         setParks(transformedParks);
         setError(null);
@@ -94,7 +94,7 @@ export default function ParkSection() {
       async function reloadParks() {
         try {
           setLoading(true);
-          const response = await ParkAPI.getAllParks({ limit: 10 });
+          const response = await ParkAPI.getAllParks({ limit: 6 });
           const transformedParks = transformApiParks(response.data);
           setParks(transformedParks);
         } catch (error) {
@@ -111,7 +111,7 @@ export default function ParkSection() {
       async function fetchNativePlantingsParks() {
         try {
           setLoading(true);
-          const response = await ParkAPI.getAllParks({ nativePlantings: true, limit: 10 });
+          const response = await ParkAPI.getAllParks({ nativePlantings: true, limit: 6 });
           const transformedParks = transformApiParks(response.data);
           setParks(transformedParks.length > 0 ? transformedParks : []);
         } catch (error) {
@@ -128,7 +128,7 @@ export default function ParkSection() {
       async function fetchWildlifeHabitatParks() {
         try {
           setLoading(true);
-          const response = await ParkAPI.getAllParks({ wildlifeHabitat: true, limit: 10 });
+          const response = await ParkAPI.getAllParks({ wildlifeHabitat: true, limit: 6 });
           const transformedParks = transformApiParks(response.data);
           setParks(transformedParks.length > 0 ? transformedParks : []);
         } catch (error) {
@@ -145,7 +145,7 @@ export default function ParkSection() {
       async function fetchLargeParks() {
         try {
           setLoading(true);
-          const response = await ParkAPI.getAllParks({ minAreaKm2: 2.0, limit: 10 });
+          const response = await ParkAPI.getAllParks({ minAreaKm2: 2.0, limit: 6 });
           const transformedParks = transformApiParks(response.data);
           setParks(transformedParks.length > 0 ? transformedParks : []);
         } catch (error) {

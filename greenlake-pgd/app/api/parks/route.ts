@@ -12,56 +12,44 @@ export async function GET(req: NextRequest) {
     const hasSustainableIrrigation = searchParams.get('sustainableIrrigation') === 'true';
     const minAreaKm2 = searchParams.get('minAreaKm2') ? parseFloat(searchParams.get('minAreaKm2')!) : null;
     const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
-
-    // Build filter object for infrastructure table
-    const infrastructureFilter: any = {
-      type: 'park',
+    const offset = parseInt(searchParams.get('offset') || '0');    // Build filter object
+    const where: any = {
+      infrastructure_park: {}
     };
     
     if (cityId) {
-      infrastructureFilter.city_id = cityId;
+      where.city_id = cityId;
     }
 
-    // Build filter object for park specific data
-    const parkFilter: any = {};
-    
+    // Añadir filtros específicos para parques
     if (size) {
-      parkFilter.size = size;
+      where.infrastructure_park.size = size;
     }
     
     if (searchParams.has('nativePlantings')) {
-      parkFilter.native_plantings = hasNativePlantings;
+      where.infrastructure_park.native_plantings = hasNativePlantings;
     }
     
     if (searchParams.has('wildlifeHabitat')) {
-      parkFilter.wildlife_habitat = hasWildlifeHabitat;
+      where.infrastructure_park.wildlife_habitat = hasWildlifeHabitat;
     }
     
     if (searchParams.has('sustainableIrrigation')) {
-      parkFilter.sustainable_irrigation = hasSustainableIrrigation;
+      where.infrastructure_park.sustainable_irrigation = hasSustainableIrrigation;
     }
     
     if (minAreaKm2 !== null) {
-      parkFilter.area_km2 = {
+      where.infrastructure_park.area_km2 = {
         gte: minAreaKm2,
       };
-    }
-
-    // Query to get total count for pagination
+    }    // Query to get total count for pagination
     const totalCount = await prisma.infrastructure.count({
-      where: {
-        ...infrastructureFilter,
-        infrastructure_park: parkFilter,
-      },
+      where,
     });
 
     // Main query with pagination and filters
     const parks = await prisma.infrastructure.findMany({
-      where: {
-        ...infrastructureFilter,
-        infrastructure_park: parkFilter,
-      },
+      where,
       include: {
         cities: true,
         infrastructure_park: true,

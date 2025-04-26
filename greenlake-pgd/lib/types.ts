@@ -122,16 +122,28 @@ export interface City {
 
 // Electric Rental Vehicle
 export interface ElectricRentalVehicle {
-  vehicle_id: string;
-  vehicle_type: string;
-  brand: string;
+  vehicle_id?: string;
+  id?: string;
+  vehicle_type?: string;
+  type?: string;
+  brand?: string;
+  make?: string;
   model: string;
-  infra_id: string;
-  battery_range_km: number;
-  price_per_hour: number;
-  price_per_day: number;
-  available_vehicles: number;
+  infra_id?: string;
+  city_id?: string | null;
+  battery_range_km?: number;
+  electric_range?: number | null;
+  price_per_hour?: number;
+  rental_cost_per_hour?: number | null;
+  price_per_day?: number;
+  available_vehicles?: number;
+  capacity?: number | null;
+  vin?: string | null;
+  model_year?: number | null;
+  dol_vehicle_id?: number | null;
+  census_tract?: number | null;
   infrastructure?: Infrastructure;
+  cities?: City;
 }
 
 // Request types for creation
@@ -185,13 +197,19 @@ export interface CreateTransportRouteRequest {
   transportType: string;
   originCityId: string;
   destinationCityId: string;
-  distanceKm: number;
-  travelMinutes: number;
-  frequency: string;
-  departureTimes: string;
-  capacity: number;
-  price: number;
-  utilizationPercent?: number;
-  efficiencyScore?: number;
-  carbonFootprintKg?: number;
+}
+// Request for creating an Electric Rental Vehicle
+export interface CreateElectricVehicleRequest {
+  id?: string;
+  cityId: string;
+  vin?: string;
+  modelYear?: number;
+  make?: string;
+  model?: string;
+  electricRange?: number;
+  rentalCostPerHour?: number;
+  capacity?: number;
+  type?: string;
+  dol_vehicle_id?: number;
+  census_tract?: number;
 }

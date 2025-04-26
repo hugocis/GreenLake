@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { TransportRouteAPI, TransportationHubAPI } from '@/lib/api-client';
-import { TransportRoute, Infrastructure, InfrastructureTransportationHub } from '@/lib/types';
+import { TransportRouteAPI, TransportationHubAPI, ElectricVehicleAPI } from '@/lib/api-client';
+import { TransportRoute, Infrastructure, InfrastructureTransportationHub, ElectricRentalVehicle } from '@/lib/types';
 
 type TransportRouteWithDetails = {
   id: string;
@@ -53,6 +53,21 @@ const transformApiRoutes = (apiRoutes: TransportRoute[]): TransportRouteWithDeta
   }));
 };
 
+// Función para transformar datos de vehículos eléctricos de la API
+const transformElectricVehicles = (apiVehicles: ElectricRentalVehicle[]): RentalVehicleWithDetails[] => {
+  return apiVehicles.map(vehicle => ({
+    id: vehicle.id || String(Math.random()),
+    vehicleType: vehicle.type || "Vehículo Eléctrico",
+    brand: vehicle.make || "Marca desconocida",
+    model: vehicle.model || "Modelo desconocido",
+    batteryRange: vehicle.electric_range || 0,
+    pricePerHour: vehicle.rental_cost_per_hour || 0,
+    pricePerDay: (vehicle.rental_cost_per_hour || 0) * 8, // Estimación de costo por día
+    locationName: vehicle.cities?.name || "Ubicación desconocida",
+    availableVehicles: Math.floor(Math.random() * 10) + 1, // Dato simulado por ahora
+  }));
+};
+
 export default function TransportSection() {
   const [activeTab, setActiveTab] = useState('public');
   const [transportRoutes, setTransportRoutes] = useState<TransportRouteWithDetails[]>([]);
@@ -81,6 +96,29 @@ export default function TransportSection() {
     fetchTransportRoutes();
   }, []);
   
+  // Cargar datos de vehículos eléctricos de alquiler desde la API
+  useEffect(() => {
+    async function fetchRentalVehicles() {
+      try {
+        if (activeTab === 'rental') {
+          setLoading(true);
+          const response = await ElectricVehicleAPI.getAllVehicles({ limit: 8 });
+          const transformedVehicles = transformElectricVehicles(response.data);
+          setRentalVehicles(transformedVehicles.length > 0 ? transformedVehicles : []);
+          setError(null);
+        }
+      } catch (error) {
+        console.error("Error fetching rental vehicles:", error);
+        setError("No se pudieron cargar los vehículos de alquiler.");
+        setRentalVehicles([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchRentalVehicles();
+  }, [activeTab]);
+  
   return (
     <section id="transport" className="py-16 bg-[#F9FAFB]">
       <div className="container mx-auto px-4">
@@ -108,15 +146,14 @@ export default function TransportSection() {
             </button>
           </div>
         </div>
-        
-        {/* Estado de carga y error */}
-        {loading && activeTab === 'public' && (
+          {/* Estado de carga y error */}
+        {loading && (
           <div className="flex justify-center items-center mb-8">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#10B981]"></div>
           </div>
         )}
         
-        {error && activeTab === 'public' && (
+        {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-8 text-center">
             <span className="block sm:inline">{error}</span>
           </div>

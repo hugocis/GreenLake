@@ -51,7 +51,7 @@ export default function HotelSection() {
         console.log("Fetching hotels...");
         
         // Llamada directa al endpoint
-        const response = await fetch('/api/hotels?limit=10');
+        const response = await fetch('/api/hotels?limit=6');
         
         if (!response.ok) {
           throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -97,7 +97,7 @@ export default function HotelSection() {
       async function reloadHotels() {
         try {
           setLoading(true);
-          const response = await HotelAPI.getAllHotels({ limit: 10 });
+          const response = await HotelAPI.getAllHotels({ limit: 6 });
           const transformedHotels = transformApiHotels(response.data);
           setHotels(transformedHotels);
         } catch (error) {
@@ -114,7 +114,7 @@ export default function HotelSection() {
       async function fetchLuxuryHotels() {
         try {
           setLoading(true);
-          const response = await HotelAPI.getAllHotels({ minStarRating: 4, limit: 10 });
+          const response = await HotelAPI.getAllHotels({ minStarRating: 4, limit: 6 });
           const transformedHotels = transformApiHotels(response.data);
           setHotels(transformedHotels);
         } catch (error) {
@@ -131,7 +131,7 @@ export default function HotelSection() {
       async function fetchOrganicHotels() {
         try {
           setLoading(true);
-          const response = await HotelAPI.getAllHotels({ organicLinens: true, limit: 10 });
+          const response = await HotelAPI.getAllHotels({ organicLinens: true, limit: 6 });
           const transformedHotels = transformApiHotels(response.data);
           setHotels(transformedHotels);
         } catch (error) {
@@ -148,7 +148,7 @@ export default function HotelSection() {
       async function fetchWaterConservationHotels() {
         try {
           setLoading(true);
-          const response = await HotelAPI.getAllHotels({ waterConservation: true, limit: 10 });
+          const response = await HotelAPI.getAllHotels({ waterConservation: true, limit: 6 });
           const transformedHotels = transformApiHotels(response.data);
           setHotels(transformedHotels);
         } catch (error) {
