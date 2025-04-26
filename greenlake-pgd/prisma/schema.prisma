@@ -68,21 +68,194 @@ model Infrastructure_gas_station {
 }
 
 model Events {
-  id                             Int     @id @default(autoincrement())
-  has_emergency_exits            Boolean
-  has_first_aid                  Boolean
-  has_smoking_area               Boolean
-  virtual_attendance_option      Boolean
-  early_bird_discount            Boolean
-  senior_discount_available      Boolean
-  setup_days_required            Int
-  local_accommodation_partners   Int
-  return_attendee_percentage     Float
-  early_registration_discount_percentage Float
-  // Aquí puedes agregar las otras 80 columnas que menciona el diagrama...
+  event_id                             String   @id @default(uuid())
+  city_id                              String
+  venue_id                             String
+  name                                 String   @db.VarChar(255)
+  description                          String   @db.Text
+  event_type                           String   @db.VarChar(50)
+  genre                                String   @db.VarChar(50)
+  topic                                String   @db.VarChar(100)
+  cuisine_type                         String   @db.VarChar(50)
+  company                              String   @db.VarChar(100)
+  organizer                            String   @db.VarChar(255)
+  contact_email                        String   @db.VarChar(255)
+  contact_phone                        String   @db.VarChar(50)
+  age_restriction                      String   @db.VarChar(20)
+  status                               String   @db.VarChar(20)
+  social_media_hashtag                 String   @db.VarChar(100)
+  refund_policy                        String   @db.VarChar(50)
+  press_coverage_level                 String   @db.VarChar(20)
+  weather_during_event                 String   @db.VarChar(20)
+  marketing_campaign_status            String   @db.VarChar(50)
+  sport                                String   @db.VarChar(50)
+  art_style                            String   @db.VarChar(50)
+  culture                              String   @db.VarChar(50)
+  play_name                            String   @db.VarChar(100)
+  game                                 String   @db.VarChar(50)
+  comedian                             String   @db.VarChar(100)
+  product                              String   @db.VarChar(100)
+  has_emergency_exits                  Boolean
+  has_first_aid                        Boolean
+  has_smoking_area                     Boolean
+  virtual_attendance_option            Boolean
+  early_bird_discount                  Boolean
+  senior_discount_available            Boolean
+  is_free                              Boolean
+  is_private                           Boolean
+  requires_registration                Boolean
+  has_food                             Boolean
+  has_alcohol                          Boolean
+  is_family_friendly                   Boolean
+  is_outdoor                           Boolean
+  weather_dependent                    Boolean
+  has_parking                          Boolean
+  has_accessible_entrance              Boolean
+  has_wifi                             Boolean
+  has_translation_services             Boolean
+  has_childcare                        Boolean
+  has_medical_staff                    Boolean
+  has_security                         Boolean
+  vip_option_available                 Boolean
+  video_recording_allowed              Boolean
+  weather_contingency_plan             Boolean
+  has_fire_extinguishers               Boolean
+  streaming_available                  Boolean
+  group_discount_available             Boolean
+  student_discount_available           Boolean
+  military_discount_available          Boolean
+  merchandise_available                Boolean
+  photography_allowed                  Boolean
+  sustainability_initiative            Boolean
+  post_event_survey_planned            Boolean
+  setup_days_required                  Int
+  local_accommodation_partners         Int
+  early_registration_discount_percentage Int
+  revenue_generated                    Int
+  actual_attendance                    Int
+  expected_economic_impact             Int
+  expected_attendance                  Int
+  staff_count                          Int
+  social_media_reach                   Int
+  community_impact_score               Int
+  vendor_count                         Int
+  sponsor_count                        Int
+  volunteer_count                      Int
+  teardown_days_required               Int
+  transportation_partners              Int
+  marketing_budget                     Int
+  projected_attendance                 Int
+  event_risk_score                     Int
+  expenses                             Int
+  profit                               Int
+  media_mentions                       Int
+  return_attendee_percentage           Float
+  attendance_vs_expected               Float
+  ticket_price                         Float
+  satisfaction_score                   Float
+  ticket_sales_progress                Float
+  sponsor_satisfaction                 Float
+  start_date                           DateTime
+  end_date                             DateTime
+  registration_deadline                DateTime
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////
+model Infrastructure_senior_living {
+  infra_id                  String  @id @default(uuid())
+  staff_count               Int
+  energy_efficient_heating  Boolean
+  unit_count                Int
+  water_conservation_systems Boolean
+  sustainable_materials     Boolean
+}
+
+model Infrastructure_office_building {
+  infra_id                  String  @id @default(uuid())
+  floor_count               Int
+  smart_lighting_systems    Boolean
+  size                      String  @db.VarChar(500)
+  tenant_capacity           Int
+  green_roof                Boolean
+  electric_vehicle_charging Boolean
+}
+
+model Infrastructure_fabric {
+  infra_id                     String  @id @default(uuid())
+  production_type              String  @db.VarChar(100)
+  water_usage_m3_day           Float
+  has_recycling_program        Boolean
+  raw_material_capacity_tons   Float
+  automation_level             Int
+  energy_consumption_kwh_day   Float
+  noise_level_db               Int
+}
+
+model Infrastructure_hospital {
+  infra_id                     String  @id @default(uuid())
+  services                     String  @db.VarChar(500)
+  sustainable_waste_disposal   Boolean
+  energy_efficient_medical_equipment Boolean
+  size_category                String  @db.VarChar(200)
+  bed_capacity                 Int
+  green_heating_cooling_systems Boolean
+}
+
+model Infrastructure_hotel {
+  infra_id                     String  @id @default(uuid())
+  water_conservation_systems   Boolean
+  star_rating                  Int
+  room_count                   Int
+  energy_efficient_lighting    Boolean
+  organic_linens               Boolean
+}
+
+model Infrastructure_restaurant {
+  infra_id                          String  @id @default(uuid())
+  energy_efficient_kitchen_equipment Boolean
+  price_category                    String  @db.VarChar(100)
+  seating_capacity                  Int
+  local_organic_ingredients         Boolean
+  waste_reduction_program           Boolean
+}
+
+model Infrastructure_salon {
+  infra_id                  String  @id @default(uuid())
+  eco_friendly_products     Boolean
+  energy_efficient_equipment Boolean
+}
+
+model Infrastructure_pet_services {
+  infra_id                  String  @id @default(uuid())
+  eco_friendly_products     Boolean
+  energy_efficient_equipment Boolean
+  sustainable_waste_disposal Boolean
+}
+
+model Infrastructure_gym {
+  infra_id                          String  @id @default(uuid())
+  is_24hour                         Boolean
+  sustainable_shower_systems        Boolean
+  size                              String  @db.VarChar(500)
+  floor_area_m2                     Int
+  energy_generating_equipment       Boolean
+  eco_friendly_cleaning             Boolean
+}
+
+model Infrastructure_transportation_hub {
+  infra_id                      String  @id @default(uuid())
+  electric_vehicle_charging     Boolean
+  bike_sharing_station          Boolean
+  public_transportation_access  Boolean
+}
+
+model Infrastructure_pharmacy {
+  infra_id                      String  @id @default(uuid())
+  is_24hour                     Boolean
+  paperless_prescriptions       Boolean
+  has_drive_thru                Boolean
+  eco_friendly_packaging        Boolean
+  energy_efficient_lighting     Boolean
+}
 
 model Sensor {
   id                  String                     @id @default(uuid())                             @map("id")
