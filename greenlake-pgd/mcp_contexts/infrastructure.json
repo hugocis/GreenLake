@@ -1,0 +1,14 @@
+{
+    "model": "Infrastructure",
+    "description": "Infraestructuras de GreenLake City con datos de sostenibilidad y eficiencia.",
+    "fields": {
+      "name": "string",
+      "type": "string",
+      "green_score": "int",
+      "energy_efficiency_score": "int",
+      "city_id": "uuid",
+      "renewable_energy_percentage": "float"
+    },
+    "actions": ["find", "filter", "list"]
+  }
+  

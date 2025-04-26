@@ -188,6 +188,7 @@ model Infrastructure_fabric {
   automation_level             Int
   energy_consumption_kwh_day   Float
   noise_level_db               Int
+  output_capacity_tons_day   Float
 }
 
 model Infrastructure_hospital {
