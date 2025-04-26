@@ -81,6 +81,9 @@ model Events {
   early_registration_discount_percentage Float
   // Aquí puedes agregar las otras 80 columnas que menciona el diagrama...
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
 model Sensor {
   id                  String                     @id @default(uuid())                             @map("id")
   installedAt         DateTime                   @map("installed_at")
