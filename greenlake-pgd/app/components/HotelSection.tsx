@@ -1,82 +1,165 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { HotelAPI } from '@/lib/api-client';
+import { Infrastructure, InfrastructureHotel } from '@/lib/types';
 
-// Datos de ejemplo basados en infrastructure_hotel del schema
-const hotelData = [
-  {
-    id: "1",
-    name: "EcoStay Hotel",
-    starRating: 4,
-    roomCount: 120,
-    energyEfficientLighting: true,
-    waterConservationSystems: true,
-    organicLinens: true,
-    rating: 4.6,
-    reviewCount: 92,
-    image: "/images/hotels/ecostay.jpg",
-    price: 150,
-    description: "Un hotel sostenible con iluminación eficiente, sistemas de conservación de agua y ropa de cama orgánica."
-  },
-  {
-    id: "2",
-    name: "Green Leaf Inn",
-    starRating: 3,
-    roomCount: 75,
-    energyEfficientLighting: true,
-    waterConservationSystems: true,
-    organicLinens: false,
-    rating: 4.4,
-    reviewCount: 68,
-    image: "/images/hotels/greenleaf.jpg",
-    price: 110,
-    description: "Un hospedaje acogedor que implementa prácticas sostenibles para reducir su huella ambiental."
-  },
-  {
-    id: "3",
-    name: "Sustainable Suites",
-    starRating: 5,
-    roomCount: 60,
-    energyEfficientLighting: true,
-    waterConservationSystems: true,
-    organicLinens: true,
-    rating: 4.9,
-    reviewCount: 105,
-    image: "/images/hotels/sustainable-suites.jpg",
-    price: 220,
-    description: "Suites de lujo que combinan confort premium con el compromiso máximo con la sostenibilidad."
-  },
-  {
-    id: "4",
-    name: "Eco Budget Hostel",
-    starRating: 2,
-    roomCount: 40,
-    energyEfficientLighting: true,
-    waterConservationSystems: false,
-    organicLinens: false,
-    rating: 4.3,
-    reviewCount: 124,
-    image: "/images/hotels/eco-budget.jpg",
-    price: 45,
-    description: "Una opción económica pero amigable con el ambiente para viajeros conscientes del presupuesto."
-  }
-];
+type HotelWithDetails = {
+  id: string;
+  name: string;
+  starRating: number;
+  roomCount: number;
+  energyEfficientLighting: boolean;
+  waterConservationSystems: boolean;
+  organicLinens: boolean;
+  rating?: number;
+  reviewCount?: number;
+  image: string;
+  price: number;
+  description: string;
+};
+
+// Función para transformar datos de la API en el formato que espera el componente
+const transformApiHotels = (apiHotels: (Infrastructure & { infrastructure_hotel: InfrastructureHotel })[]): HotelWithDetails[] => {
+  return apiHotels.map(hotel => ({
+    id: hotel.id,
+    name: hotel.name || "Hotel sin nombre",
+    starRating: hotel.infrastructure_hotel?.star_rating || 0,
+    roomCount: hotel.infrastructure_hotel?.room_count || 0,
+    energyEfficientLighting: hotel.infrastructure_hotel?.energy_efficient_lighting || false,
+    waterConservationSystems: hotel.infrastructure_hotel?.water_conservation_systems || false,
+    organicLinens: hotel.infrastructure_hotel?.organic_linens || false,
+    rating: (hotel.green_score || 0) / 2, // Convertir green_score a una escala de 5 estrellas
+    reviewCount: Math.floor(Math.random() * 100) + 50, // Dato de ejemplo
+    image: "/images/hotels/ecostay.jpg", // Imagen por defecto
+    price: 100 + (hotel.infrastructure_hotel?.star_rating || 0) * 25, // Precio basado en estrellas
+    description: `Hotel sostenible con puntuación verde de ${hotel.green_score || 'N/A'}.`
+  }));
+};
 
 export default function HotelSection() {
   const [filter, setFilter] = useState('all');
-  const [hotels, setHotels] = useState(hotelData);
+  const [hotels, setHotels] = useState<HotelWithDetails[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  function handleFilterChange(newFilter) {
+  // Cargar datos de hoteles desde la API  
+  useEffect(() => {
+    async function fetchHotels() {
+      try {
+        setLoading(true);
+        console.log("Fetching hotels...");
+        
+        // Llamada directa al endpoint
+        const response = await fetch('/api/hotels?limit=10');
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+          const jsonData = await response.json();
+        console.log("Hotels API response:", jsonData);
+        
+        // Comprobar la estructura de la respuesta
+        if (jsonData && jsonData.data && Array.isArray(jsonData.data)) {
+          console.log("Cantidad de hoteles recibidos:", jsonData.data.length);
+          if (jsonData.data.length === 0) {
+            console.warn("La API devolvió un array vacío de hoteles");
+            setError("No hay hoteles disponibles que coincidan con los criterios de búsqueda.");
+            setHotels([]);
+          } else {
+            const transformedHotels = transformApiHotels(jsonData.data);
+            console.log("Hoteles transformados:", transformedHotels);
+            setHotels(transformedHotels);
+            setError(null);
+          }
+        } else {
+          console.error("Invalid API response format:", jsonData);
+          throw new Error("Invalid API response format");
+        }
+      } catch (error) {
+        console.error("Error fetching hotels:", error);
+        setError("No se pudieron cargar los hoteles. Por favor, intenta de nuevo más tarde.");
+        setHotels([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchHotels();
+  }, []);
+  
+  function handleFilterChange(newFilter: 'all' | 'luxury' | 'organic' | 'water') {
     setFilter(newFilter);
     
+    // Aplicar filtros a los datos cargados
     if (newFilter === 'all') {
-      setHotels(hotelData);
+      // Recargar todos los datos
+      async function reloadHotels() {
+        try {
+          setLoading(true);
+          const response = await HotelAPI.getAllHotels({ limit: 10 });
+          const transformedHotels = transformApiHotels(response.data);
+          setHotels(transformedHotels);
+        } catch (error) {
+          console.error("Error reloading hotels:", error);
+          setError("No se pudieron cargar los hoteles. Por favor, intenta de nuevo más tarde.");
+        } finally {
+          setLoading(false);
+        }
+      }
+      
+      reloadHotels();
     } else if (newFilter === 'luxury') {
-      setHotels(hotelData.filter(h => h.starRating >= 4));
+      // Filtrar hoteles de 4-5 estrellas
+      async function fetchLuxuryHotels() {
+        try {
+          setLoading(true);
+          const response = await HotelAPI.getAllHotels({ minStarRating: 4, limit: 10 });
+          const transformedHotels = transformApiHotels(response.data);
+          setHotels(transformedHotels);
+        } catch (error) {
+          console.error("Error fetching luxury hotels:", error);
+          setError("No se pudieron cargar los hoteles de lujo. Por favor, intenta de nuevo más tarde.");
+        } finally {
+          setLoading(false);
+        }
+      }
+      
+      fetchLuxuryHotels();
     } else if (newFilter === 'organic') {
-      setHotels(hotelData.filter(h => h.organicLinens));
+      // Filtrar hoteles con ropa orgánica
+      async function fetchOrganicHotels() {
+        try {
+          setLoading(true);
+          const response = await HotelAPI.getAllHotels({ organicLinens: true, limit: 10 });
+          const transformedHotels = transformApiHotels(response.data);
+          setHotels(transformedHotels);
+        } catch (error) {
+          console.error("Error fetching organic hotels:", error);
+          setError("No se pudieron cargar los hoteles con ropa orgánica. Por favor, intenta de nuevo más tarde.");
+        } finally {
+          setLoading(false);
+        }
+      }
+      
+      fetchOrganicHotels();
     } else if (newFilter === 'water') {
-      setHotels(hotelData.filter(h => h.waterConservationSystems));
+      // Filtrar hoteles con sistemas de conservación de agua
+      async function fetchWaterConservationHotels() {
+        try {
+          setLoading(true);
+          const response = await HotelAPI.getAllHotels({ waterConservation: true, limit: 10 });
+          const transformedHotels = transformApiHotels(response.data);
+          setHotels(transformedHotels);
+        } catch (error) {
+          console.error("Error fetching water conservation hotels:", error);
+          setError("No se pudieron cargar los hoteles con ahorro de agua. Por favor, intenta de nuevo más tarde.");
+        } finally {
+          setLoading(false);
+        }
+      }
+      
+      fetchWaterConservationHotels();
     }
   }
   
@@ -117,6 +200,18 @@ export default function HotelSection() {
             Ahorro de Agua
           </button>
         </div>
+          {/* Estado de carga y error */}
+        {loading && (
+          <div className="flex justify-center items-center mb-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#10B981]"></div>
+          </div>
+        )}
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-8 text-center">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
         
         {/* Lista de hoteles */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

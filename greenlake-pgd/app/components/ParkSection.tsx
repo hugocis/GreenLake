@@ -1,64 +1,165 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { ParkAPI } from '@/lib/api-client';
+import { Infrastructure, InfrastructurePark } from '@/lib/types';
 
-// Datos de ejemplo basados en infrastructure_park del schema
-const parkData = [
-  {
-    id: "1",
-    name: "Parque Central Verde",
-    size: "Grande",
-    areaKm2: 2.75,
-    nativePlantings: true,
-    wildlifeHabitat: true,
-    sustainableIrrigation: true,
-    description: "Un amplio parque urbano con abundante vegetación nativa y hábitat para diversas especies silvestres locales.",
-    mainAttractions: ["Jardín botánico", "Lago artificial", "Senderos ecológicos"],
-    rating: 4.8,
-    reviewCount: 120,
-  },
-  {
-    id: "2",
-    name: "Reserva Natural Águila Verde",
-    size: "Extra grande",
-    areaKm2: 5.20,
-    nativePlantings: true,
-    wildlifeHabitat: true,
-    sustainableIrrigation: true,
-    description: "Reserva natural con ecosistemas protegidos donde se pueden observar aves migratorias y flora endémica.",
-    mainAttractions: ["Torres de observación", "Centro de interpretación", "Rutas guiadas"],
-    rating: 4.9,
-    reviewCount: 85,
-  },
-  {
-    id: "3",
-    name: "Jardines Sostenibles",
-    size: "Pequeño",
-    areaKm2: 0.65,
-    nativePlantings: true,
-    wildlifeHabitat: false,
-    sustainableIrrigation: true,
-    description: "Jardines urbanos que muestran técnicas de jardinería sostenible y cultivos locales.",
-    mainAttractions: ["Huerto comunitario", "Jardines temáticos", "Área de picnic"],
-    rating: 4.6,
-    reviewCount: 62,
-  },
-  {
-    id: "4",
-    name: "Parque Acuático Natural",
-    size: "Mediano",
-    areaKm2: 1.35,
-    nativePlantings: true,
-    wildlifeHabitat: true,
-    sustainableIrrigation: true,
-    description: "Parque construido alrededor de un río natural con áreas para baño y recreación acuática sostenible.",
-    mainAttractions: ["Piscinas naturales", "Cascadas", "Áreas para nadar"],
-    rating: 4.7,
-    reviewCount: 94,
-  },
-];
+type ParkWithDetails = {
+  id: string;
+  name: string;
+  size: string;
+  areaKm2: number;
+  nativePlantings: boolean;
+  wildlifeHabitat: boolean;
+  sustainableIrrigation: boolean;
+  description: string;
+  mainAttractions: string[];
+  rating: number;
+  reviewCount: number;
+};
+
+// Función para transformar datos de la API en el formato que espera el componente
+const transformApiParks = (apiParks: (Infrastructure & { infrastructure_park: InfrastructurePark })[]): ParkWithDetails[] => {
+  return apiParks.map(park => ({
+    id: park.id,
+    name: park.name || "Parque sin nombre",
+    size: park.infrastructure_park?.size || "Mediano",
+    areaKm2: park.infrastructure_park?.area_km2 || 1.0,
+    nativePlantings: park.infrastructure_park?.native_plantings || false,
+    wildlifeHabitat: park.infrastructure_park?.wildlife_habitat || false,
+    sustainableIrrigation: park.infrastructure_park?.sustainable_irrigation || false,
+    description: `Parque sostenible con una puntuación verde de ${park.green_score || 'N/A'}.`,
+    mainAttractions: generateRandomAttractions(park.name || ""),
+    rating: (park.green_score || 0) / 2, // Convertir green_score a una escala de 5 estrellas
+    reviewCount: Math.floor(Math.random() * 100) + 50, // Dato de ejemplo
+  }));
+};
+
+// Función para generar atracciones aleatorias para los parques
+function generateRandomAttractions(parkName: string): string[] {
+  const possibleAttractions = [
+    "Jardín botánico", "Lago artificial", "Senderos ecológicos", 
+    "Área de juegos infantiles", "Zona de picnic", "Observatorio de aves", 
+    "Huerto comunitario", "Jardín de mariposas", "Área de conservación", 
+    "Cascada artificial", "Ciclovía", "Centro de interpretación ambiental"
+  ];
+  
+  // Seleccionar entre 2-4 atracciones aleatorias
+  const numAttractions = Math.floor(Math.random() * 3) + 2;
+  const attractions: string[] = [];
+  
+  while (attractions.length < numAttractions) {
+    const attraction = possibleAttractions[Math.floor(Math.random() * possibleAttractions.length)];
+    if (!attractions.includes(attraction)) {
+      attractions.push(attraction);
+    }
+  }
+  
+  return attractions;
+}
 
 export default function ParkSection() {
+  const [filter, setFilter] = useState('all');
+  const [parks, setParks] = useState<ParkWithDetails[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Cargar datos de parques desde la API
+  useEffect(() => {
+    async function fetchParks() {
+      try {
+        setLoading(true);
+        const response = await ParkAPI.getAllParks({ limit: 10 });
+        const transformedParks = transformApiParks(response.data);
+        setParks(transformedParks);
+        setError(null);
+      } catch (error) {
+        console.error("Error fetching parks:", error);
+        setError("No se pudieron cargar los parques. Por favor, intenta de nuevo más tarde.");
+        setParks([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchParks();
+  }, []);
+  
+  function handleFilterChange(newFilter: 'all' | 'native' | 'wildlife' | 'large') {
+    setFilter(newFilter);
+    
+    // Aplicar filtros a los datos cargados
+    if (newFilter === 'all') {
+      // Recargar todos los datos
+      async function reloadParks() {
+        try {
+          setLoading(true);
+          const response = await ParkAPI.getAllParks({ limit: 10 });
+          const transformedParks = transformApiParks(response.data);
+          setParks(transformedParks);
+        } catch (error) {
+          console.error("Error reloading parks:", error);
+          setError("No se pudieron cargar los parques. Por favor, intenta de nuevo más tarde.");
+        } finally {
+          setLoading(false);
+        }
+      }
+      
+      reloadParks();
+    } else if (newFilter === 'native') {
+      // Filtrar parques con plantaciones nativas
+      async function fetchNativePlantingsParks() {
+        try {
+          setLoading(true);
+          const response = await ParkAPI.getAllParks({ nativePlantings: true, limit: 10 });
+          const transformedParks = transformApiParks(response.data);
+          setParks(transformedParks.length > 0 ? transformedParks : []);
+        } catch (error) {
+          console.error("Error fetching parks with native plantings:", error);
+          setParks([]);
+        } finally {
+          setLoading(false);
+        }
+      }
+      
+      fetchNativePlantingsParks();
+    } else if (newFilter === 'wildlife') {
+      // Filtrar parques con hábitat de vida silvestre
+      async function fetchWildlifeHabitatParks() {
+        try {
+          setLoading(true);
+          const response = await ParkAPI.getAllParks({ wildlifeHabitat: true, limit: 10 });
+          const transformedParks = transformApiParks(response.data);
+          setParks(transformedParks.length > 0 ? transformedParks : []);
+        } catch (error) {
+          console.error("Error fetching parks with wildlife habitat:", error);
+          setParks([]);
+        } finally {
+          setLoading(false);
+        }
+      }
+      
+      fetchWildlifeHabitatParks();
+    } else if (newFilter === 'large') {
+      // Filtrar parques grandes
+      async function fetchLargeParks() {
+        try {
+          setLoading(true);
+          const response = await ParkAPI.getAllParks({ minAreaKm2: 2.0, limit: 10 });
+          const transformedParks = transformApiParks(response.data);
+          setParks(transformedParks.length > 0 ? transformedParks : []);
+        } catch (error) {
+          console.error("Error fetching large parks:", error);
+          setParks([]);
+        } finally {
+          setLoading(false);
+        }
+      }
+      
+      fetchLargeParks();
+    }
+  }
+  
   return (
     <section id="parks" className="py-16">
       <div className="container mx-auto px-4">
@@ -66,77 +167,117 @@ export default function ParkSection() {
           Parques y Áreas Naturales
         </h2>
         <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
-          Descubre los espacios verdes de Greenlake City donde la naturaleza y sostenibilidad son prioridad
+          Explora nuestros espacios verdes urbanos y áreas de conservación natural
         </p>
         
+        {/* Filtros */}
+        <div className="flex flex-wrap justify-center gap-4 mb-8">
+          <button 
+            onClick={() => handleFilterChange('all')}
+            className={`px-4 py-2 rounded-full border ${filter === 'all' ? 'bg-[#10B981] text-white' : 'border-[#10B981] text-[#10B981] hover:bg-[#D1FAE5]'} transition-all duration-300`}
+          >
+            Todos
+          </button>
+          <button 
+            onClick={() => handleFilterChange('native')}
+            className={`px-4 py-2 rounded-full border ${filter === 'native' ? 'bg-[#10B981] text-white' : 'border-[#10B981] text-[#10B981] hover:bg-[#D1FAE5]'} transition-all duration-300`}
+          >
+            Plantaciones Nativas
+          </button>
+          <button 
+            onClick={() => handleFilterChange('wildlife')}
+            className={`px-4 py-2 rounded-full border ${filter === 'wildlife' ? 'bg-[#10B981] text-white' : 'border-[#10B981] text-[#10B981] hover:bg-[#D1FAE5]'} transition-all duration-300`}
+          >
+            Hábitat Silvestre
+          </button>
+          <button 
+            onClick={() => handleFilterChange('large')}
+            className={`px-4 py-2 rounded-full border ${filter === 'large' ? 'bg-[#10B981] text-white' : 'border-[#10B981] text-[#10B981] hover:bg-[#D1FAE5]'} transition-all duration-300`}
+          >
+            Parques Grandes
+          </button>
+        </div>
+        
+        {/* Estado de carga y error */}
+        {loading && (
+          <div className="flex justify-center items-center mb-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#10B981]"></div>
+          </div>
+        )}
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-8 text-center">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
+        
+        {/* Lista de parques */}
         <div className="grid md:grid-cols-2 gap-8">
-          {parkData.map((park) => (
+          {parks.map(park => (
             <div key={park.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col md:flex-row">
-              <div className="md:w-2/5 bg-[#34D399] flex items-center justify-center p-6">
+              <div className="md:w-2/5 bg-[#065F46] flex items-center justify-center p-6">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                 </svg>
               </div>
               <div className="md:w-3/5 p-6">
                 <div className="flex items-center mb-2">
                   <span className="bg-[#D1FAE5] text-[#065F46] text-xs font-bold px-2 py-1 rounded mr-2">
-                    PARQUE
+                    {park.size}
                   </span>
-                  <span className="text-gray-500 text-sm">{park.size} • {park.areaKm2} km²</span>
+                  <span className="text-gray-500 text-sm">
+                    {park.areaKm2} km²
+                  </span>
                 </div>
                 <h3 className="text-xl font-semibold text-[#065F46] mb-2">{park.name}</h3>
                 <p className="text-gray-600 mb-4">
                   {park.description}
                 </p>
-                <div className="mb-4">
-                  <h4 className="text-sm font-semibold text-[#10B981] mb-2">Atracciones Principales:</h4>
-                  <ul className="space-y-1">
-                    {park.mainAttractions.map((attraction, index) => (
-                      <li key={index} className="flex items-center text-gray-600 text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#10B981] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        {attraction}
-                      </li>
-                    ))}
-                  </ul>
+                <div className="text-sm mb-3">
+                  <span className="font-bold text-[#10B981]">{park.rating}</span> ({park.reviewCount} reseñas)
                 </div>
-                <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
-                  <div className="text-sm text-gray-500">
-                    <span className="font-bold text-[#10B981]">{park.rating}</span> ({park.reviewCount} reseñas)
-                  </div>
-                  <div className="flex gap-2">
-                    {park.nativePlantings && (
-                      <span className="inline-flex items-center text-xs bg-[#D1FAE5] text-[#065F46] px-2 py-1 rounded">
-                        Plantas nativas
-                      </span>
-                    )}
-                    {park.wildlifeHabitat && (
-                      <span className="inline-flex items-center text-xs bg-[#D1FAE5] text-[#065F46] px-2 py-1 rounded">
-                        Hábitat silvestre
-                      </span>
-                    )}
-                  </div>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {park.mainAttractions.map((attraction, index) => (
+                    <span key={index} className="inline-flex items-center text-xs bg-[#D1FAE5] text-[#065F46] px-2 py-1 rounded">
+                      {attraction}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {park.nativePlantings && (
+                    <span className="inline-flex items-center text-xs bg-[#D1FAE5] text-[#065F46] px-2 py-1 rounded">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Plantaciones nativas
+                    </span>
+                  )}
+                  {park.wildlifeHabitat && (
+                    <span className="inline-flex items-center text-xs bg-[#D1FAE5] text-[#065F46] px-2 py-1 rounded">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Hábitat para vida silvestre
+                    </span>
+                  )}
+                  {park.sustainableIrrigation && (
+                    <span className="inline-flex items-center text-xs bg-[#D1FAE5] text-[#065F46] px-2 py-1 rounded">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Riego sostenible
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
           ))}
         </div>
         
-        <div className="mt-10 bg-[#D1FAE5] rounded-xl p-6 md:p-8 shadow-md">
-          <div className="flex flex-col md:flex-row md:items-center">
-            <div className="md:w-3/4 mb-6 md:mb-0 md:pr-6">
-              <h3 className="text-2xl font-bold text-[#065F46] mb-2">Explora nuestros parques sostenibles</h3>
-              <p className="text-gray-700">
-                Greenlake City cuenta con más de 20 parques y áreas naturales donde podrás conectar con la naturaleza, observar vida silvestre y disfrutar de actividades al aire libre. Todos nuestros espacios verdes están diseñados bajo estrictos criterios de sostenibilidad.
-              </p>
-            </div>
-            <div className="md:w-1/4 flex justify-center md:justify-end">
-              <button className="bg-[#065F46] hover:bg-[#047857] text-white font-bold py-3 px-8 rounded-lg transition-all duration-300">
-                Ver Mapa Verde
-              </button>
-            </div>
-          </div>
+        <div className="text-center mt-10">
+          <button className="bg-[#065F46] hover:bg-[#047857] text-white font-bold py-3 px-8 rounded-lg transition-all duration-300">
+            Ver Todos los Parques
+          </button>
         </div>
       </div>
     </section>
