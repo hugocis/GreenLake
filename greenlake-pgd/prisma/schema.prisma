@@ -1,120 +1,83 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL_LOOPERS")
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+model cities {
+  id                                                            String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                                                          String?                   @db.VarChar(255)
+  capital                                                       Boolean?
+  state_id                                                      String?                   @db.Uuid
+  has_harbor                                                    Boolean?                  @default(false)
+  location                                                      Unsupported("geometry")?
+  states                                                        states?                   @relation(fields: [state_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  city_borders                                                  city_borders?
+  electric_rental_vehicle                                       electric_rental_vehicle[]
+  events                                                        events[]
+  infrastructure                                                infrastructure[]
+  parcels                                                       parcels[]
+  people                                                        people[]
+  roads_roads_origin_city_idTocities                            roads[]                   @relation("roads_origin_city_idTocities")
+  roads_roads_target_city_idTocities                            roads[]                   @relation("roads_target_city_idTocities")
+  sensors                                                       sensors[]
+  transport_routes_transport_routes_destination_city_idTocities transport_routes[]        @relation("transport_routes_destination_city_idTocities")
+  transport_routes_transport_routes_origin_city_idTocities      transport_routes[]        @relation("transport_routes_origin_city_idTocities")
 
-model infrastructure_daycare {
-  infra_id               String   @id @db.Uuid
-  child_capacity         Int?
-  age_range              String?  @db.VarChar(20)
-  organic_food           Boolean?
-  eco_friendly_toys      Boolean?
-  outdoor_learning_space Boolean?
-  // Relación con infrastructure
-  infrastructure         infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_daycare")
+  @@index([location], map: "idx_cities_location", type: Gist)
 }
 
-model infrastructure_auto_service {
-  infra_id                  String   @id @db.Uuid
-  bay_count                 Int?
-  eco_friendly_services     Boolean?
-  electric_vehicle_charging Boolean?
-  recycling_program         Boolean?
-  // Relación con infrastructure
-  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
+model city_borders {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  city_id      String    @unique(map: "city_borders_unique_city") @db.Uuid
+  vertices     String
+  area_km2     Decimal   @db.Decimal
+  bounding_box Decimal[] @db.Decimal
+  cities       cities    @relation(fields: [city_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@map("infrastructure_auto_service")
+  @@index([city_id], map: "idx_city_borders_city_id")
 }
 
-model infrastructure_government_building {
-  infra_id                   String   @id @db.Uuid
-  energy_efficient_heating   Boolean?
-  water_conservation_systems Boolean?
-  green_roof                 Boolean?
-
-  // Relación con infrastructure
-  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_government_building")
+model electric_rental_vehicle {
+  id                   String   @id @db.Uuid
+  city_id              String?  @db.Uuid
+  vin                  String?  @db.VarChar(10)
+  model_year           Int?
+  make                 String?  @db.VarChar(255)
+  model                String?  @db.VarChar(255)
+  electric_range       Int?
+  dol_vehicle_id       BigInt?
+  census_tract         BigInt?
+  rental_cost_per_hour Decimal? @db.Decimal(5, 2)
+  capacity             Int?
+  type                 String?  @db.VarChar(50)
+  cities               cities?  @relation(fields: [city_id], references: [id], onUpdate: NoAction)
 }
 
-model infrastructure_laundromat {
-  infra_id                  String   @id @db.Uuid
-  washer_count              Int?
-  dryer_count               Int?
-  is_24hour                 Boolean?
-  energy_efficient_machines Boolean?
-  water_recycling_system    Boolean?
-  eco_friendly_detergents   Boolean?
-
-  // Relación con infrastructure
-  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_laundromat")
-}
-
-model infrastructure_healthcare_clinic {
-  infra_id                           String   @id @db.Uuid
-  staff_count                        Int?
-  examination_rooms                  Int?
-  energy_efficient_medical_equipment Boolean?
-  sustainable_waste_disposal         Boolean?
-  telemedicine_capabilities          Boolean?
-
-  // Relación con infrastructure
-  infrastructure                     infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_healthcare_clinic")
-}
-
-model infrastructure_gas_station {
-  infra_id                  String   @id @db.Uuid
-  pump_count                Int?
-  has_convenience_store     Boolean?
-  electric_vehicle_charging Boolean?
-  biofuel_availability      Boolean?
-  solar_powered             Boolean?
-
-  // Relación con infrastructure
-  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_gas_station")
-}
-
-model event {
-  event_id                               String   @id @db.Uuid
-  city_id                                String?  @db.Uuid
-  venue_id                               String?  @db.Uuid
-  event_type                             String?  @db.VarChar(50)
-  name                                   String   @db.VarChar(255)
-  description                            String?  @db.Text
-  start_date                             DateTime?
-  end_date                               DateTime?
+model events {
+  event_id                               String          @id @db.Uuid
+  city_id                                String?         @db.Uuid
+  venue_id                               String?         @db.Uuid
+  event_type                             String?         @db.VarChar(50)
+  name                                   String          @db.VarChar(255)
+  description                            String?
+  start_date                             DateTime?       @db.Timestamp(6)
+  end_date                               DateTime?       @db.Timestamp(6)
   expected_attendance                    Int?
   actual_attendance                      Int?
   ticket_price                           Float?
-  status                                 String?  @db.VarChar(20)
-  organizer                              String?  @db.VarChar(255)
-  contact_email                          String?  @db.VarChar(255)
-  contact_phone                          String?  @db.VarChar(50)
+  status                                 String?         @db.VarChar(20)
+  organizer                              String?         @db.VarChar(255)
+  contact_email                          String?         @db.VarChar(255)
+  contact_phone                          String?         @db.VarChar(50)
   is_free                                Boolean?
   is_private                             Boolean?
   requires_registration                  Boolean?
-  age_restriction                        String?  @db.VarChar(20)
+  age_restriction                        String?         @db.VarChar(20)
   has_food                               Boolean?
   has_alcohol                            Boolean?
   is_family_friendly                     Boolean?
@@ -133,7 +96,7 @@ model event {
   has_smoking_area                       Boolean?
   streaming_available                    Boolean?
   virtual_attendance_option              Boolean?
-  social_media_hashtag                   String?  @db.VarChar(100)
+  social_media_hashtag                   String?         @db.VarChar(100)
   early_bird_discount                    Boolean?
   group_discount_available               Boolean?
   student_discount_available             Boolean?
@@ -143,7 +106,7 @@ model event {
   merchandise_available                  Boolean?
   photography_allowed                    Boolean?
   video_recording_allowed                Boolean?
-  refund_policy                          String?  @db.VarChar(50)
+  refund_policy                          String?         @db.VarChar(50)
   weather_contingency_plan               Boolean?
   sustainability_initiative              Boolean?
   community_impact_score                 Int?
@@ -154,7 +117,7 @@ model event {
   staff_count                            Int?
   volunteer_count                        Int?
   social_media_reach                     Int?
-  registration_deadline                  DateTime?
+  registration_deadline                  DateTime?       @db.Date
   setup_days_required                    Int?
   teardown_days_required                 Int?
   local_accommodation_partners           Int?
@@ -162,473 +125,343 @@ model event {
   marketing_budget                       Int?
   satisfaction_score                     Float?
   return_attendee_percentage             Float?
-  press_coverage_level                   String?  @db.VarChar(20)
-  weather_during_event                   String?  @db.VarChar(20)
+  press_coverage_level                   String?         @db.VarChar(20)
+  weather_during_event                   String?         @db.VarChar(20)
   ticket_sales_progress                  Float?
   early_registration_discount_percentage Int?
   projected_attendance                   Int?
   event_risk_score                       Int?
-  marketing_campaign_status              String?  @db.VarChar(50)
+  marketing_campaign_status              String?         @db.VarChar(50)
   revenue_generated                      Int?
   expenses                               Int?
   profit                                 Int?
   attendance_vs_expected                 Float?
   sponsor_satisfaction                   Float?
   media_mentions                         Int?
-  genre                                  String?  @db.VarChar(50)
-  sport                                  String?  @db.VarChar(50)
-  art_style                              String?  @db.VarChar(50)
-  topic                                  String?  @db.VarChar(100)
-  culture                                String?  @db.VarChar(50)
-  cuisine_type                           String?  @db.VarChar(50)
-  play_name                              String?  @db.VarChar(100)
-  game                                   String?  @db.VarChar(50)
-  comedian                               String?  @db.VarChar(100)
-  company                                String?  @db.VarChar(100)
-  product                                String?  @db.VarChar(100)  // Relaciones
-  city                                   cities? @relation(fields: [city_id], references: [id])
-  venue                                  infrastructure? @relation(fields: [venue_id], references: [id])
-
-  @@map("events")
+  genre                                  String?         @db.VarChar(50)
+  sport                                  String?         @db.VarChar(50)
+  art_style                              String?         @db.VarChar(50)
+  topic                                  String?         @db.VarChar(100)
+  culture                                String?         @db.VarChar(50)
+  cuisine_type                           String?         @db.VarChar(50)
+  play_name                              String?         @db.VarChar(100)
+  game                                   String?         @db.VarChar(50)
+  comedian                               String?         @db.VarChar(100)
+  company                                String?         @db.VarChar(100)
+  product                                String?         @db.VarChar(100)
+  cities                                 cities?         @relation(fields: [city_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  infrastructure                         infrastructure? @relation(fields: [venue_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
-
-model infrastructure_senior_living {
-  infra_id                   String   @id @db.Uuid
-  unit_count                 Int?
-  staff_count                Int?
-  energy_efficient_heating   Boolean?
-  water_conservation_systems Boolean?
-  sustainable_materials      Boolean?
-
-  // Relación con infrastructure
-  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_senior_living")
-}
-
-model infrastructure_office_building {
-  infra_id                  String   @id @db.Uuid
-  size                      String?  @db.VarChar(50)
-  floor_count               Int?
-  tenant_capacity           Int?
-  smart_lighting_systems    Boolean?
-  green_roof                Boolean?
-  electric_vehicle_charging Boolean?
-
-  // Relación con infrastructure
-  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_office_building")
-}
-
-model infrastructure_fabric {
-  infra_id                   String   @id @db.Uuid
-  production_type            String?  @db.VarChar(100)
-  raw_material_capacity_tons Decimal?
-  output_capacity_tons_day   Decimal?
-  automation_level           Int?
-  water_usage_m3_day         Decimal?
-  energy_consumption_kwh_day Decimal?
-  has_recycling_program      Boolean? @default(false)
-  noise_level_db             Decimal?
-
-  // Relación con infrastructure
-  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_fabric")
-}
-
-model infrastructure_hospital {
-  infra_id                           String   @id @db.Uuid
-  size_category                      String?  @db.VarChar(50)
-  bed_capacity                       Int?
-  services                           String?  @db.Text
-  energy_efficient_medical_equipment Boolean?
-  sustainable_waste_disposal         Boolean?
-  green_heating_cooling_systems      Boolean?
-
-  // Relación con infrastructure
-  infrastructure                     infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_hospital")
-}
-
-model infrastructure_hotel {
-  infra_id                   String   @id @db.Uuid
-  star_rating                Int?
-  room_count                 Int?
-  energy_efficient_lighting  Boolean?
-  water_conservation_systems Boolean?
-  organic_linens             Boolean?
-
-  // Relación con infrastructure
-  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_hotel")
-}
-
-model infrastructure_restaurant {
-  infra_id                           String   @id @db.Uuid
-  price_category                     String?  @db.VarChar(10)
-  seating_capacity                   Int?
-  local_organic_ingredients          Boolean?
-  energy_efficient_kitchen_equipment Boolean?
-  waste_reduction_program            Boolean?
-
-  // Relación con infrastructure
-  infrastructure                     infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_restaurant")
-}
-
-model infrastructure_salon {
-  infra_id                   String   @id @db.Uuid
-  styling_stations           Int?
-  eco_friendly_products      Boolean?
-  water_conservation_systems Boolean?
-  energy_efficient_equipment Boolean?
-
-  // Relación con infrastructure
-  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_salon")
-}
-
-model infrastructure_pet_services {
-  infra_id                   String   @id @db.Uuid
-  eco_friendly_products      Boolean?
-  sustainable_waste_disposal Boolean?
-  energy_efficient_equipment Boolean?
-
-  // Relación con infrastructure
-  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_pet_services")
-}
-
-model infrastructure_gym {
-  infra_id                    String   @id @db.Uuid
-  size                        String?  @db.VarChar(50)
-  floor_area_m2               Int?
-  is_24hour                   Boolean?
-  energy_generating_equipment Boolean?
-  sustainable_shower_systems  Boolean?
-  eco_friendly_cleaning       Boolean?
-
-  // Relación con infrastructure
-  infrastructure              infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_gym")
-}
-
-model infrastructure_transportation_hub {
-  infra_id                     String   @id @db.Uuid
-  electric_vehicle_charging    Boolean?
-  public_transportation_access Boolean?
-  bike_sharing_station         Boolean?
-
-  // Relación con infrastructure
-  infrastructure               infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_transportation_hub")
-}
-
-model infrastructure_pharmacy {
-  infra_id                  String   @id @db.Uuid
-  is_24hour                 Boolean?
-  has_drive_thru            Boolean?
-  paperless_prescriptions   Boolean?
-  eco_friendly_packaging    Boolean?
-  energy_efficient_lighting Boolean?
-
-  // Relación con infrastructure
-  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_pharmacy")
-}
-
-model sensor {
-  id              String   @id @db.Uuid
-  sensor_type     String   @db.Text
-  installed_at    DateTime?
-  city_id         String?  @db.Uuid
-  state_id        String?  @db.Uuid
-  location        String?  @db.Text
-  road_id         String?  @db.Uuid
-  km_point        Float?
-  industrial_zone Boolean? @default(false)
-  
-  // Relaciones
-  city            cities?    @relation(fields: [city_id], references: [id])
-  state           states?   @relation(fields: [state_id], references: [id])
-  road            road?    @relation(fields: [road_id], references: [id])
-  ambient_metrics sensor_metrics_ambient[]
-  traffic_metrics sensor_metrics_traffic[]
-  air_metrics     sensor_metrics_air[]
-  water_usage_metrics sensor_metrics_water_usage[]
-  water_quality_metrics sensor_metrics_water_quality[]
-
-  @@map("sensors")
-}
-
-model sensor_metrics_ambient {
-  event_time      DateTime @db.Timestamptz
-  sensor_id       String   @db.Uuid
-  temperature     Float?
-  humidity        Float?
-  solar_radiation Float?
-
-  // Relaciones
-  sensor          sensor   @relation(fields: [sensor_id], references: [id])
-
-  @@id([event_time, sensor_id])
-  @@map("sensor_metrics_ambient")
-}
-
-model sensor_metrics_traffic {
-  event_time       DateTime @db.Timestamptz
-  sensor_id        String   @db.Uuid
-  vehicle_density  Float?
-  avg_speed        Float?
-  flow_rate        Float?
-  occupancy        Float?
-  congestion_index Float?
-
-  // Relaciones
-  sensor           sensor   @relation(fields: [sensor_id], references: [id])
-
-  @@id([event_time, sensor_id])
-  @@map("sensor_metrics_traffic")
-}
-
-model sensor_metrics_air {
-  event_time DateTime @db.Timestamptz
-  sensor_id  String   @db.Uuid
-  pm10       Float?
-  co         Float?
-  co2        Float?
-  no2        Float?
-  o3         Float?
-  so2        Float?
-
-  // Relaciones
-  sensor     sensor   @relation(fields: [sensor_id], references: [id])
-
-  @@id([event_time, sensor_id])
-  @@map("sensor_metrics_air")
-}
-
-model sensor_metrics_water_usage {
-  event_time   DateTime @db.Timestamptz
-  sensor_id    String   @db.Uuid
-  usage_liters Float?
-
-  // Relaciones
-  sensor       sensor   @relation(fields: [sensor_id], references: [id])
-
-  @@id([event_time, sensor_id])
-  @@map("sensor_metrics_water_usage")
-}
-
-model sensor_metrics_water_quality {
-  event_time        DateTime @db.Timestamptz
-  sensor_id         String   @db.Uuid
-  water_temperature Float?
-  ph_level          Float?
-  turbidity         Float?
-  dissolved_oxygen  Float?
-  conductivity      Float?
-
-  // Relaciones
-  sensor            sensor   @relation(fields: [sensor_id], references: [id])
-
-  @@id([event_time, sensor_id])
-  @@map("sensor_metrics_water_quality")
-}
-
 
 model infrastructure {
-  id                           String   @id @db.Uuid
-  city_id                      String?  @db.Uuid
-  type                         String   @db.VarChar(100)
-  subtype                      String?  @db.VarChar(100)
-  name                         String?  @db.VarChar(255)
-  opening_date                 DateTime? @db.Date
-  green_score                  Int?
-  carbon_footprint_kg_per_year Decimal?
-  energy_efficiency_score      Int?
-  water_efficiency_score       Int?
-  waste_management_score       Int?
-  renewable_energy_percentage  Decimal?
-  green_certification          String?  @db.Text
-  location                     Unsupported("geometry(Point,4326)")  // Relaciones
-  city                         cities?     @relation(fields: [city_id], references: [id])
-  events                       event[]
-  routes_as_origin            transport_routes[] @relation("origin_hub")
-  routes_as_destination       transport_routes[] @relation("destination_hub")
-  reviews                      review[]
-  infrastructure_auto_service  infrastructure_auto_service?
-  infrastructure_bank          infrastructure_bank?
-  infrastructure_daycare       infrastructure_daycare?
-  infrastructure_fabric        infrastructure_fabric?
-  infrastructure_gas_station   infrastructure_gas_station?
-  infrastructure_government_building infrastructure_government_building?
-  infrastructure_gym           infrastructure_gym?
-  infrastructure_healthcare_clinic infrastructure_healthcare_clinic?
-  infrastructure_hospital      infrastructure_hospital?
-  infrastructure_hotel         infrastructure_hotel?
-  infrastructure_laundromat    infrastructure_laundromat?
-  infrastructure_office_building infrastructure_office_building?
-  infrastructure_park          infrastructure_park?
-  infrastructure_pet_services  infrastructure_pet_services?
-  infrastructure_pharmacy      infrastructure_pharmacy?
-  infrastructure_religious_building infrastructure_religious_building?
-  infrastructure_restaurant    infrastructure_restaurant?
-  infrastructure_salon         infrastructure_salon?
-  infrastructure_school        infrastructure_school?
-  infrastructure_senior_living infrastructure_senior_living?
-  infrastructure_shop          infrastructure_shop?
-  infrastructure_supermarket   infrastructure_supermarket?
-  infrastructure_transportation_hub infrastructure_transportation_hub?
-  infrastructure_venues        infrastructure_venues?
+  id                                                                   String                              @id @db.Uuid
+  city_id                                                              String?                             @db.Uuid
+  type                                                                 String                              @db.VarChar(100)
+  subtype                                                              String?                             @db.VarChar(100)
+  name                                                                 String?                             @db.VarChar(255)
+  opening_date                                                         DateTime?                           @db.Date
+  green_score                                                          Int?
+  carbon_footprint_kg_per_year                                         Decimal?                            @db.Decimal
+  energy_efficiency_score                                              Int?
+  water_efficiency_score                                               Int?
+  waste_management_score                                               Int?
+  renewable_energy_percentage                                          Decimal?                            @db.Decimal
+  green_certification                                                  String?
+  location                                                             Unsupported("geometry")?
+  events                                                               events[]
+  cities                                                               cities?                             @relation(fields: [city_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  infrastructure_auto_service                                          infrastructure_auto_service?
+  infrastructure_bank                                                  infrastructure_bank?
+  infrastructure_daycare                                               infrastructure_daycare?
+  infrastructure_fabric                                                infrastructure_fabric?
+  infrastructure_gas_station                                           infrastructure_gas_station?
+  infrastructure_government_building                                   infrastructure_government_building?
+  infrastructure_gym                                                   infrastructure_gym?
+  infrastructure_healthcare_clinic                                     infrastructure_healthcare_clinic?
+  infrastructure_hospital                                              infrastructure_hospital?
+  infrastructure_hotel                                                 infrastructure_hotel?
+  infrastructure_laundromat                                            infrastructure_laundromat?
+  infrastructure_office_building                                       infrastructure_office_building?
+  infrastructure_park                                                  infrastructure_park?
+  infrastructure_pet_services                                          infrastructure_pet_services?
+  infrastructure_pharmacy                                              infrastructure_pharmacy?
+  infrastructure_religious_building                                    infrastructure_religious_building?
+  infrastructure_restaurant                                            infrastructure_restaurant?
+  infrastructure_salon                                                 infrastructure_salon?
+  infrastructure_school                                                infrastructure_school?
+  infrastructure_senior_living                                         infrastructure_senior_living?
+  infrastructure_shop                                                  infrastructure_shop?
+  infrastructure_supermarket                                           infrastructure_supermarket?
+  infrastructure_transportation_hub                                    infrastructure_transportation_hub?
+  infrastructure_venues                                                infrastructure_venues?
+  review                                                               review[]
+  transport_routes_transport_routes_destination_hub_idToinfrastructure transport_routes[]                  @relation("transport_routes_destination_hub_idToinfrastructure")
+  transport_routes_transport_routes_origin_hub_idToinfrastructure      transport_routes[]                  @relation("transport_routes_origin_hub_idToinfrastructure")
 
-  @@map("infrastructure")
+  @@index([city_id], map: "idx_infra_city_id")
+  @@index([subtype], map: "idx_infra_subtype")
+  @@index([type], map: "idx_infra_type")
+  @@index([location], map: "idx_infrastructure_location", type: Gist)
 }
 
-model infrastructure_shop {
-  infra_id                  String   @id @db.Uuid
-  size                      String?  @db.VarChar(50)
-  eco_friendly_products     Boolean?
-  energy_efficient_lighting Boolean?
-  sustainable_packaging     Boolean?
-
-  // Relación con infrastructure
-  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_shop")
-}
-
-model infrastructure_supermarket {
-  infra_id                       String   @id @db.Uuid
-  size                           String?  @db.VarChar(50)
-  floor_area_m2                  Int?
-  register_count                 Int?
-  local_organic_products         Boolean?
-  energy_efficient_refrigeration Boolean?
-  waste_reduction_program        Boolean?
-
-  // Relación con infrastructure
-  infrastructure                 infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_supermarket")
-}
-
-model road {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  origin_city_id  String?  @db.Uuid
-  target_city_id  String?  @db.Uuid
-  toll            Float?
-  geometry        Unsupported("geography(LineString,4326)")
-  length_km       Float?
-
-  // Relaciones
-  origin_city     cities?    @relation("OriginCity", fields: [origin_city_id], references: [id])
-  target_city     cities?    @relation("TargetCity", fields: [target_city_id], references: [id])
-  sensors         sensor[]
-
-  @@map("roads")
+model infrastructure_auto_service {
+  infra_id                  String         @id @db.Uuid
+  bay_count                 Int?
+  eco_friendly_services     Boolean?
+  electric_vehicle_charging Boolean?
+  recycling_program         Boolean?
+  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model infrastructure_bank {
-  infra_id                  String   @id @db.Uuid
+  infra_id                  String         @id @db.Uuid
   atm_count                 Int?
   has_drive_thru            Boolean?
   paperless_operations      Boolean?
   green_investment_products Boolean?
   energy_efficient_lighting Boolean?
-
-  // Relación
-  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_bank")
+  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
-model infrastructure_religious_building {
-  infra_id                  String   @id @db.Uuid
-  solar_panels              Boolean?
-  energy_efficient_lighting Boolean?
-  sustainable_materials     Boolean?
+model infrastructure_daycare {
+  infra_id               String         @id @db.Uuid
+  child_capacity         Int?
+  age_range              String?        @db.VarChar(20)
+  organic_food           Boolean?
+  eco_friendly_toys      Boolean?
+  outdoor_learning_space Boolean?
+  infrastructure         infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
 
-  // Relación
-  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model infrastructure_fabric {
+  infra_id                   String         @id @db.Uuid
+  production_type            String?        @db.VarChar(100)
+  raw_material_capacity_tons Decimal?       @db.Decimal
+  output_capacity_tons_day   Decimal?       @db.Decimal
+  automation_level           Int?
+  water_usage_m3_day         Decimal?       @db.Decimal
+  energy_consumption_kwh_day Decimal?       @db.Decimal
+  has_recycling_program      Boolean?       @default(false)
+  noise_level_db             Decimal?       @db.Decimal
+  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
 
-  @@map("infrastructure_religious_building")
+model infrastructure_gas_station {
+  infra_id                  String         @id @db.Uuid
+  pump_count                Int?
+  has_convenience_store     Boolean?
+  electric_vehicle_charging Boolean?
+  biofuel_availability      Boolean?
+  solar_powered             Boolean?
+  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_government_building {
+  infra_id                   String         @id @db.Uuid
+  energy_efficient_heating   Boolean?
+  water_conservation_systems Boolean?
+  green_roof                 Boolean?
+  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_gym {
+  infra_id                    String         @id @db.Uuid
+  size                        String?        @db.VarChar(50)
+  floor_area_m2               Int?
+  is_24hour                   Boolean?
+  energy_generating_equipment Boolean?
+  sustainable_shower_systems  Boolean?
+  eco_friendly_cleaning       Boolean?
+  infrastructure              infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_healthcare_clinic {
+  infra_id                           String         @id @db.Uuid
+  staff_count                        Int?
+  examination_rooms                  Int?
+  energy_efficient_medical_equipment Boolean?
+  sustainable_waste_disposal         Boolean?
+  telemedicine_capabilities          Boolean?
+  infrastructure                     infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_hospital {
+  infra_id                           String         @id @db.Uuid
+  size_category                      String?        @db.VarChar(50)
+  bed_capacity                       Int?
+  services                           String?
+  energy_efficient_medical_equipment Boolean?
+  sustainable_waste_disposal         Boolean?
+  green_heating_cooling_systems      Boolean?
+  infrastructure                     infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_hotel {
+  infra_id                   String         @id @db.Uuid
+  star_rating                Int?
+  room_count                 Int?
+  energy_efficient_lighting  Boolean?
+  water_conservation_systems Boolean?
+  organic_linens             Boolean?
+  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_laundromat {
+  infra_id                  String         @id @db.Uuid
+  washer_count              Int?
+  dryer_count               Int?
+  is_24hour                 Boolean?
+  energy_efficient_machines Boolean?
+  water_recycling_system    Boolean?
+  eco_friendly_detergents   Boolean?
+  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_office_building {
+  infra_id                  String         @id @db.Uuid
+  size                      String?        @db.VarChar(50)
+  floor_count               Int?
+  tenant_capacity           Int?
+  smart_lighting_systems    Boolean?
+  green_roof                Boolean?
+  electric_vehicle_charging Boolean?
+  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model infrastructure_park {
-  infra_id               String   @id @db.Uuid
-  size                   String?  @db.VarChar(50)
-  area_km2               Decimal? @db.Decimal(10, 2)
+  infra_id               String         @id @db.Uuid
+  size                   String?        @db.VarChar(50)
+  area_km2               Decimal?       @db.Decimal(10, 2)
   native_plantings       Boolean?
   wildlife_habitat       Boolean?
   sustainable_irrigation Boolean?
-
-  // Relación
-  infrastructure         infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_park")
+  infrastructure         infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
-model tourism_trips {
-  trip_id            String   @id @db.Uuid
-  person_id          String   @db.Uuid
-  route_id           String   @db.Uuid
-  departure_datetime DateTime @db.Timestamp(6)
-  arrival_datetime   DateTime @db.Timestamp(6)
-  is_return          Boolean
-
-  // Relaciones
-  people             people   @relation(fields: [person_id], references: [id])
-  transport_routes   transport_routes @relation(fields: [route_id], references: [route_id])
-
-  @@map("tourism_trips")
+model infrastructure_pet_services {
+  infra_id                   String         @id @db.Uuid
+  eco_friendly_products      Boolean?
+  sustainable_waste_disposal Boolean?
+  energy_efficient_equipment Boolean?
+  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
+model infrastructure_pharmacy {
+  infra_id                  String         @id @db.Uuid
+  is_24hour                 Boolean?
+  has_drive_thru            Boolean?
+  paperless_prescriptions   Boolean?
+  eco_friendly_packaging    Boolean?
+  energy_efficient_lighting Boolean?
+  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
 
-model transport_routes {
-  route_id             String  @id @db.Uuid
-  transport_type       String  @db.VarChar(50)
-  route_name           String  @db.VarChar(255)
-  origin_city_id       String  @db.Uuid
-  origin_hub_id        String  @db.Uuid
-  destination_city_id  String  @db.Uuid
-  destination_hub_id   String  @db.Uuid
-  distance_km          Decimal @db.Decimal(10,2)
-  travel_time          String  @db.VarChar(50)
-  travel_minutes       Int
-  frequency            String  @db.VarChar(50)
-  departure_times      String  @db.Text
-  capacity             Int
-  price                Decimal @db.Decimal(10,2)
-  utilization_percent  Decimal @db.Decimal(5,2)
-  efficiency_score     Decimal @db.Decimal(5,2)
-  carbon_footprint_kg  Decimal @db.Decimal(10,2)
+model infrastructure_religious_building {
+  infra_id                  String         @id @db.Uuid
+  solar_panels              Boolean?
+  energy_efficient_lighting Boolean?
+  sustainable_materials     Boolean?
+  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
 
-  // Relaciones
-  origin_city          cities          @relation("origin_city", fields: [origin_city_id], references: [id])
-  destination_city     cities          @relation("destination_city", fields: [destination_city_id], references: [id])
-  origin_hub          infrastructure  @relation("origin_hub", fields: [origin_hub_id], references: [id])
-  destination_hub     infrastructure  @relation("destination_hub", fields: [destination_hub_id], references: [id])
-  tourism_trips       tourism_trips[]
+model infrastructure_restaurant {
+  infra_id                           String         @id @db.Uuid
+  price_category                     String?        @db.VarChar(10)
+  seating_capacity                   Int?
+  local_organic_ingredients          Boolean?
+  energy_efficient_kitchen_equipment Boolean?
+  waste_reduction_program            Boolean?
+  infrastructure                     infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
 
-  @@map("transport_routes")
+model infrastructure_salon {
+  infra_id                   String         @id @db.Uuid
+  styling_stations           Int?
+  eco_friendly_products      Boolean?
+  water_conservation_systems Boolean?
+  energy_efficient_equipment Boolean?
+  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_school {
+  infra_id                           String         @id @db.Uuid
+  student_capacity                   Int?
+  environmental_education_program    Boolean?
+  energy_efficient_lighting          Boolean?
+  sustainable_transportation_options Boolean?
+  infrastructure                     infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_senior_living {
+  infra_id                   String         @id @db.Uuid
+  unit_count                 Int?
+  staff_count                Int?
+  energy_efficient_heating   Boolean?
+  water_conservation_systems Boolean?
+  sustainable_materials      Boolean?
+  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_shop {
+  infra_id                  String         @id @db.Uuid
+  size                      String?        @db.VarChar(50)
+  eco_friendly_products     Boolean?
+  energy_efficient_lighting Boolean?
+  sustainable_packaging     Boolean?
+  infrastructure            infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_supermarket {
+  infra_id                       String         @id @db.Uuid
+  size                           String?        @db.VarChar(50)
+  floor_area_m2                  Int?
+  register_count                 Int?
+  local_organic_products         Boolean?
+  energy_efficient_refrigeration Boolean?
+  waste_reduction_program        Boolean?
+  infrastructure                 infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_transportation_hub {
+  infra_id                     String         @id @db.Uuid
+  electric_vehicle_charging    Boolean?
+  public_transportation_access Boolean?
+  bike_sharing_station         Boolean?
+  infrastructure               infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model infrastructure_venues {
+  infra_id                   String         @id @db.Uuid
+  capacity                   Int?
+  size                       String?        @db.VarChar(20)
+  indoor                     Boolean?
+  has_parking                Boolean?
+  has_public_transport       Boolean?
+  year_built                 Int?
+  last_renovation_year       Int?
+  accessibility_score        Int?
+  security_score             Int?
+  technology_score           Int?
+  comfort_score              Int?
+  sustainability_score       Int?
+  amenities                  String?
+  rental_price_per_day       Int?
+  has_catering               Boolean?
+  has_technical_support      Boolean?
+  has_accommodation          Boolean?
+  sustainability_rating      Int?
+  energy_efficient_lighting  Boolean?
+  water_conservation_systems Boolean?
+  waste_reduction_program    Boolean?
+  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model music {
-  id               String   @id @db.Text
-  artists          String?  @db.Text
-  album_name       String?  @db.Text
-  track_name       String?  @db.Text
+  id               String         @id
+  artists          String?
+  album_name       String?
+  track_name       String?
   duration_ms      BigInt?
   explicit         Boolean?
   danceability     Float?
@@ -643,49 +476,264 @@ model music {
   valence          Float?
   tempo            Float?
   time_signature   BigInt?
-  track_genre      String?  @db.Text
-
-  // Relación inversa
+  track_genre      String?
   people_music     people_music[]
-
-  @@map("music")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model parcels {
+  parcel_id    String  @id @db.VarChar(100)
+  city_id      String  @db.Uuid
+  area_m2      Decimal @db.Decimal
+  centroid_lat Decimal @db.Decimal
+  centroid_lon Decimal @db.Decimal
+  vertices     String
+  cities       cities  @relation(fields: [city_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_parcels_city")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model people {
-  id                String   @id @db.Uuid
-  city_id           String   @db.Uuid
-  first_name        String   @db.Text
-  last_name         String   @db.Text
-  birth_date        DateTime @db.Date
-  job_sector        String   @db.Text
-  education         String?  @db.Text
-  employment_status String?  @db.Text
+  id                String             @id @db.Uuid
+  city_id           String             @db.Uuid
+  first_name        String
+  last_name         String
+  birth_date        DateTime           @db.Date
+  job_sector        String
+  education         String?
+  employment_status String?
   income            Int?
-  personality       String   @db.Text
-  // Relaciones
-  city              cities      @relation(fields: [city_id], references: [id])
-  reviews           review[]
-  tourism_trips     tourism_trips[]
+  personality       String
+  cities            cities             @relation(fields: [city_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   people_music      people_music[]
+  review            review[]
+  tourism_trips     tourism_trips[]    
   vip_network_data  vip_network_data[]
 
-  @@map("people")
+  @@index([city_id], map: "idx_people_city_id")
 }
 
 model people_music {
   people_id String @db.Uuid
-  music_id  String @db.Text
-
-  // Relaciones
-  people    people @relation(fields: [people_id], references: [id], onDelete: Cascade)
-  music     music  @relation(fields: [music_id], references: [id], onDelete: Cascade)
+  music_id  String
+  music     music  @relation(fields: [music_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  people    people @relation(fields: [people_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([people_id, music_id])
-  @@map("people_music")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model review {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  people_id      String         @db.Uuid
+  infra_id       String         @db.Uuid
+  datetime       DateTime?      @default(now()) @db.Timestamptz(6)
+  description    String?
+  stars          Int?
+  infrastructure infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_review_infrastructure")
+  people         people         @relation(fields: [people_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_review_people")
+
+  @@index([datetime], map: "idx_review_datetime")
+  @@index([infra_id], map: "idx_review_infra_id")
+  @@index([people_id], map: "idx_review_people_id")
+}
+
+model roads {
+  origin_city_id                      String?                   @db.Uuid
+  target_city_id                      String?                   @db.Uuid
+  toll                                Float?
+  id                                  String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  geometry                            Unsupported("geography")?
+  length_km                           Float?
+  cities_roads_origin_city_idTocities cities?                   @relation("roads_origin_city_idTocities", fields: [origin_city_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_city1")
+  cities_roads_target_city_idTocities cities?                   @relation("roads_target_city_idTocities", fields: [target_city_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_city2")
+  sensors                             sensors[]
+  service_area                        service_area[]
+}
+
+/// This table has subclasses and requires additional setup for migrations. Visit https://pris.ly/d/table-inheritance for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model sensor_metrics_air {
+  event_time DateTime @db.Timestamptz(6)
+  sensor_id  String   @db.Uuid
+  pm10       Float?
+  co         Float?
+  co2        Float?
+  no2        Float?
+  o3         Float?
+  so2        Float?
+  sensors    sensors  @relation(fields: [sensor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([event_time, sensor_id])
+  @@index([event_time(sort: Desc)])
+}
+
+/// This table has subclasses and requires additional setup for migrations. Visit https://pris.ly/d/table-inheritance for more info.
+model sensor_metrics_ambient {
+  event_time      DateTime @db.Timestamptz(6)
+  sensor_id       String   @db.Uuid
+  temperature     Float?
+  humidity        Float?
+  solar_radiation Float?
+  sensors         sensors  @relation(fields: [sensor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([event_time, sensor_id])
+  @@index([event_time(sort: Desc)])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model sensor_metrics_traffic {
+  event_time       DateTime @db.Timestamptz(6)
+  sensor_id        String   @db.Uuid
+  vehicle_density  Float?
+  avg_speed        Float?
+  flow_rate        Float?
+  occupancy        Float?
+  congestion_index Float?
+  sensors          sensors  @relation(fields: [sensor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([event_time, sensor_id])
+  @@index([event_time(sort: Desc)])
+}
+
+/// This table has subclasses and requires additional setup for migrations. Visit https://pris.ly/d/table-inheritance for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model sensor_metrics_water_quality {
+  event_time        DateTime @db.Timestamptz(6)
+  sensor_id         String   @db.Uuid
+  water_temperature Float?
+  ph_level          Float?
+  turbidity         Float?
+  dissolved_oxygen  Float?
+  conductivity      Float?
+  sensors           sensors  @relation(fields: [sensor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk__sensor_metrics_water_quality__sensors")
+
+  @@id([event_time, sensor_id])
+  @@index([event_time(sort: Desc)])
+}
+
+/// This table has subclasses and requires additional setup for migrations. Visit https://pris.ly/d/table-inheritance for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model sensor_metrics_water_usage {
+  event_time   DateTime @db.Timestamptz(6)
+  sensor_id    String   @db.Uuid
+  usage_liters Float?
+  sensors      sensors  @relation(fields: [sensor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk__sensor_metrics_water_usage__sensors")
+
+  @@id([event_time, sensor_id])
+  @@index([event_time(sort: Desc)])
+}
+
+model sensors {
+  id                           String                         @id @db.Uuid
+  sensor_type                  String
+  installed_at                 DateTime?                      @db.Timestamptz(6)
+  city_id                      String?                        @db.Uuid
+  state_id                     String?                        @db.Uuid
+  location                     Unsupported("geography")?
+  road_id                      String?                        @db.Uuid
+  km_point                     Float?
+  industrial_zone              Boolean?                       @default(false)
+  sensor_metrics_air           sensor_metrics_air[]
+  sensor_metrics_ambient       sensor_metrics_ambient[]
+  sensor_metrics_traffic       sensor_metrics_traffic[]
+  sensor_metrics_water_quality sensor_metrics_water_quality[]
+  sensor_metrics_water_usage   sensor_metrics_water_usage[]
+  cities                       cities?                        @relation(fields: [city_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  roads                        roads?                         @relation(fields: [road_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  states                       states?                        @relation(fields: [state_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model service_area {
+  id                  String   @id @db.Uuid
+  latitude            Float?
+  longitude           Float?
+  road_id             String?  @db.Uuid
+  distance_from_start BigInt?
+  has_cafe            Boolean?
+  roads               roads?   @relation(fields: [road_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_road_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model state_borders {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  state_id     String    @unique(map: "uq_state_id") @db.Uuid
+  vertices     String
+  area_km2     Decimal   @db.Decimal
+  bounding_box Decimal[] @db.Decimal
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+  states       states    @relation(fields: [state_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([state_id], map: "idx_state_borders_state_id")
+}
+
+model states {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String         @unique @db.VarChar(255)
+  cities        cities[]
+  sensors       sensors[]
+  state_borders state_borders?
+}
+
+/// This model contains a check constraint (valid_trip_duration) to ensure arrival_datetime > departure_datetime
+model tourism_trips {
+  trip_id            String           @id @db.Uuid
+  person_id          String           @db.Uuid
+  route_id           String           @db.Uuid
+  departure_datetime DateTime         @db.Timestamp(6)
+  arrival_datetime   DateTime         @db.Timestamp(6)
+  is_return          Boolean
+  people             people           @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tourism_person")
+  transport_routes   transport_routes @relation(fields: [route_id], references: [route_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tourism_route")
+
+  // Composite index for better query performance
+  @@index([person_id])
+  @@index([route_id])
+}
+
+model transport_routes {
+  route_id                                                           String          @id @db.Uuid
+  transport_type                                                     String          @db.VarChar(50)
+  route_name                                                         String          @db.VarChar(255)
+  origin_city_id                                                     String          @db.Uuid
+  origin_hub_id                                                      String          @db.Uuid
+  destination_city_id                                                String          @db.Uuid
+  destination_hub_id                                                 String          @db.Uuid
+  distance_km                                                        Decimal         @db.Decimal(10, 2)
+  travel_time                                                        String          @db.VarChar(50)
+  travel_minutes                                                     Int
+  frequency                                                          String          @db.VarChar(50)
+  departure_times                                                    String
+  capacity                                                           Int
+  price                                                              Decimal         @db.Decimal(10, 2)
+  utilization_percent                                                Decimal         @db.Decimal(5, 2)
+  efficiency_score                                                   Decimal         @db.Decimal(5, 2)
+  carbon_footprint_kg                                                Decimal         @db.Decimal(10, 2)
+  tourism_trips                                                      tourism_trips[]
+  cities_transport_routes_destination_city_idTocities                cities          @relation("transport_routes_destination_city_idTocities", fields: [destination_city_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_destination_city")
+  infrastructure_transport_routes_destination_hub_idToinfrastructure infrastructure  @relation("transport_routes_destination_hub_idToinfrastructure", fields: [destination_hub_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_destination_hub")
+  cities_transport_routes_origin_city_idTocities                     cities          @relation("transport_routes_origin_city_idTocities", fields: [origin_city_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_origin_city")
+  infrastructure_transport_routes_origin_hub_idToinfrastructure      infrastructure  @relation("transport_routes_origin_hub_idToinfrastructure", fields: [origin_hub_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_origin_hub")
+
+  @@index([destination_city_id], map: "idx_route_destination_city")
+  @@index([destination_hub_id], map: "idx_route_destination_hub")
+  @@index([origin_city_id], map: "idx_route_origin_city")
+  @@index([origin_hub_id], map: "idx_route_origin_hub")
+  @@index([transport_type], map: "idx_route_transport_type")
+}
+
+/// Modelo para la recolección de datos de red de usuarios VIP
 model vip_network_data {
-  id                            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id                       String   @db.Uuid
   ip_origin                     String?  @db.Inet
   ip_destination                String?  @db.Inet
@@ -715,169 +763,14 @@ model vip_network_data {
   service_type                  String?  @db.VarChar(50)
   client_type                   String?  @db.VarChar(50)
   timestamp                     DateTime @default(now()) @db.Timestamptz(6)
+  people                        people   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  // Relaciones
-  people                        people   @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@map("vip_network_data")
-}
-
-model review {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  people_id   String   @db.Uuid
-  infra_id    String   @db.Uuid
-  datetime    DateTime @default(now()) @db.Timestamptz(6)
-  description String?
-  stars       Int?
-
-  // Relaciones
-  people      people   @relation(fields: [people_id], references: [id], onDelete: Cascade)
-  infrastructure infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@index([datetime], name: "idx_review_datetime")
-  @@index([infra_id], name: "idx_review_infra_id")
-  @@index([people_id], name: "idx_review_people_id")
-  @@map("review")
-}
-
-model city_borders {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  city_id      String    @unique @db.Uuid
-  vertices     String
-  area_km2     Decimal
-  bounding_box Decimal[]
-
-  // Relaciones
-  cities       cities    @relation(fields: [city_id], references: [id])
-
-  @@index([city_id], name: "idx_city_borders_city_id")
-  @@map("city_borders")
-}
-model cities {
-  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name              String?  @db.VarChar(255)
-  capital           Boolean?
-  state_id          String?  @db.Uuid
-  has_harbor        Boolean? @default(false)
-  location          String?  @db.Text
-
-  // Relaciones
-  states            states?  @relation(fields: [state_id], references: [id])
-  people            people[]
-  sensors           sensor[]
-  origin_routes     transport_routes[] @relation("origin_city")
-  destination_routes transport_routes[] @relation("destination_city")
-  roads_as_origin   road[] @relation("OriginCity")
-  roads_as_target   road[] @relation("TargetCity")
-  infrastructure    infrastructure[]
-  electric_vehicles electric_rental_vehicle[]
-  parcels           parcels[]
-  city_borders      city_borders?
-  events            event[]
-
-  @@map("cities")
-}
-
-
-model parcels {
-  parcel_id    String  @id @db.VarChar(100)
-  city_id      String  @db.Uuid
-  area_m2      Decimal @db.Decimal(15,2)
-  centroid_lat Decimal @db.Decimal(10,6)
-  centroid_lon Decimal @db.Decimal(10,6)
-  vertices     String  @db.Text
-
-  // Relaciones
-  cities       cities  @relation(fields: [city_id], references: [id], onDelete: Cascade)
-
-  @@map("parcels")
-}
-
-model states {
-  id   String @id @default(dbgenerated()) @db.Uuid
-  name String @unique @db.VarChar(255)
-  // Relaciones
-  cities  cities[]
-  sensors sensor[]
-  state_borders state_borders[]
-
-  @@map("states")
-}
-
-model state_borders {
-  id            String    @id @default(dbgenerated()) @db.Uuid
-  state_id      String    @unique @db.Uuid
-  vertices      String    @db.Text
-  area_km2      Decimal   @db.Decimal(15,2)
-  bounding_box  Decimal[] @db.Decimal(15,2)
-  created_at    DateTime? @default(dbgenerated()) @db.Timestamptz
-  updated_at    DateTime? @default(dbgenerated()) @db.Timestamptz
-
-  // Relaciones
-  states        states    @relation(fields: [state_id], references: [id])
-
-  @@map("state_borders")
-}
-
-model electric_rental_vehicle {
-  id                   String   @id @db.Uuid
-  city_id              String?  @db.Uuid
-  vin                  String?  @db.VarChar(10)
-  model_year           Int?
-  make                 String?  @db.VarChar(255)
-  model                String?  @db.VarChar(255)
-  electric_range       Int?
-  dol_vehicle_id       BigInt?
-  census_tract         BigInt?
-  rental_cost_per_hour Decimal? @db.Decimal(5,2)
-  capacity             Int?
-  type                 String?  @db.VarChar(50)
-
-  // Relaciones
-  cities               cities?  @relation(fields: [city_id], references: [id], onDelete: SetNull)
-
-  @@map("electric_rental_vehicle")
-}
-
-model infrastructure_school {
-  infra_id                           String  @id @db.Uuid
-  student_capacity                   Int?
-  environmental_education_program    Boolean?
-  energy_efficient_lighting          Boolean?
-  sustainable_transportation_options Boolean?
-
-  // Relaciones
-  infrastructure                     infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_school")
-}
-
-model infrastructure_venues {
-  infra_id                   String  @id @db.Uuid
-  capacity                   Int?
-  size                       String? @db.VarChar(20)
-  indoor                     Boolean?
-  has_parking                Boolean?
-  has_public_transport       Boolean?
-  year_built                 Int?
-  last_renovation_year       Int?
-  accessibility_score        Int?
-  security_score             Int?
-  technology_score           Int?
-  comfort_score              Int?
-  sustainability_score       Int?
-  amenities                  String? @db.Text
-  rental_price_per_day       Int?
-  has_catering               Boolean?
-  has_technical_support      Boolean?
-  has_accommodation          Boolean?
-  sustainability_rating      Int?
-  energy_efficient_lighting  Boolean?
-  water_conservation_systems Boolean?
-  waste_reduction_program    Boolean?
-
-  // Relaciones
-  infrastructure             infrastructure @relation(fields: [infra_id], references: [id], onDelete: Cascade)
-
-  @@map("infrastructure_venues")
+  // Definir identificador único compuesto para permitir que Prisma maneje esta tabla
+  @@id([user_id, timestamp])
+  
+  // Índices para mejorar el rendimiento de consultas comunes
+  @@index([user_id])
+  @@index([timestamp])
+  @@index([app_type])
+  @@index([service_type])
 }
