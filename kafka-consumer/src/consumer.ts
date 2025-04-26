@@ -1,11 +1,10 @@
 import { Kafka, EachMessagePayload } from 'kafkajs';
-import { PrismaClient } from '../generated/prisma';
+import prisma from "./lib/prisma"; 
 import * as dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
 
-const prisma = new PrismaClient();
 // Make sure we have a valid broker URL
 const brokerUrl = process.env.KAFKA_BROKER || 'localhost:9092';
 console.log(`Connecting to Kafka broker: ${brokerUrl}`);
@@ -147,7 +146,9 @@ async function run() {
         }
       }
     }
-  });process.on('SIGINT', async () => {
+  });
+
+  process.on('SIGINT', async () => {
     console.log('Disconnecting consumer…');
     await consumer.disconnect();
     await prisma.$disconnect();
@@ -155,7 +156,7 @@ async function run() {
   });
 }
 
-run().catch(e => {
-  console.error(e);
+run().catch((e: Error) => {
+  console.error('Failed to run consumer:', e);
   process.exit(1);
 });
