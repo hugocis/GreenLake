@@ -11,8 +11,7 @@ export default function Home() {
           width={180}
           height={38}
           priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
+        />        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
           <li className="mb-2 tracking-[-.01em]">
             Get started by editing{" "}
             <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
@@ -20,8 +19,18 @@ export default function Home() {
             </code>
             .
           </li>
-          <li className="tracking-[-.01em]">
+          <li className="mb-2 tracking-[-.01em]">
             Save and see your changes instantly.
+          </li>
+          <li className="tracking-[-.01em]">
+            Visita nuestra{" "}
+            <a 
+              href="/prisma-test" 
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              página de prueba de Prisma
+            </a>
+            {" "}para ver datos de la base de datos.
           </li>
         </ol>
 

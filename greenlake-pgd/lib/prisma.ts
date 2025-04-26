@@ -1,10 +1,10 @@
-// src/lib/prisma.ts
-import 'dotenv/config';  
+// lib/prisma.ts
+import { PrismaClient } from '@prisma/client';
 
 // debug log to confirm what Prisma will see
-console.log('→ [prisma] using DATABASE_URL =', process.env.DATABASE_URL);
-
-import { PrismaClient } from '@prisma/client';
+if (process.env.DATABASE_URL_LOOPERS) {
+  console.log('→ [prisma] using DATABASE_URL_LOOPERS =', process.env.DATABASE_URL_LOOPERS);
+}
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
