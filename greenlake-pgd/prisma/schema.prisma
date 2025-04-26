@@ -13,4 +13,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+model Sensor {
+  id                  String                     @id @default(uuid())                             @map("id")
+  installedAt         DateTime                   @map("installed_at")
+  cityId              String                     @map("city_id")
+  location            Unsupported("GEOGRAPHY(POINT,4326)")                     @map("location")
+  kmPoint             Float                      @map("km_point")
+  sensorType          String                     @map("sensor_type")
+  stateId             String                     @map("state_id")
+  roadId              String?                    @map("road_id")
+  industrialZone      Boolean                    @map("industrial_zone")
+
+  ambientMetrics      SensorMetricsAmbient[]     @relation("AmbientOnSensor")
+  trafficMetrics      SensorMetricsTraffic[]     @relation("TrafficOnSensor")
+  airMetrics          SensorMetricsAir[]         @relation("AirOnSensor")
+  waterUsageMetrics   SensorMetricsWaterUsage[]  @relation("WaterUsageOnSensor")
+  waterQualityMetrics SensorMetricsWaterQuality[]@relation("WaterQualityOnSensor")
+
+  @@map("sensors")
+}
+
+model SensorMetricsAmbient {
+  sensorId       String   @map("sensor_id")
+  eventTime      DateTime @map("event_time")
+  temperature    Float
+  humidity       Float
+  solarRadiation Float   @map("solar_radiation")
+
+  sensor Sensor @relation("AmbientOnSensor", fields: [sensorId], references: [id])
+
+  @@id([sensorId, eventTime])
+  @@map("sensor_metrics_ambient")
+}
+
+model SensorMetricsTraffic {
+  sensorId        String   @map("sensor_id")
+  eventTime       DateTime @map("event_time")
+  vehicleDensity  Float    @map("vehicle_density")
+  avgSpeed        Float    @map("avg_speed")
+  flowRate        Float    @map("flow_rate")
+  occupancy       Float
+  congestionIndex Float    @map("congestion_index")
+
+  sensor Sensor @relation("TrafficOnSensor", fields: [sensorId], references: [id])
+
+  @@id([sensorId, eventTime])
+  @@map("sensor_metrics_traffic")
+}
+
+model SensorMetricsAir {
+  sensorId  String   @map("sensor_id")
+  eventTime DateTime @map("event_time")
+  pm10      Float
+  co        Float
+  co2       Float
+  no2       Float
+  o3        Float
+  so2       Float
+
+  sensor Sensor @relation("AirOnSensor", fields: [sensorId], references: [id])
+
+  @@id([sensorId, eventTime])
+  @@map("sensor_metrics_air")
+}
+
+model SensorMetricsWaterUsage {
+  sensorId    String   @map("sensor_id")
+  eventTime   DateTime @map("event_time")
+  usageLiters Float    @map("usage_liters")
+
+  sensor Sensor @relation("WaterUsageOnSensor", fields: [sensorId], references: [id])
+
+  @@id([sensorId, eventTime])
+  @@map("sensor_metrics_water_usage")
+}
+
+model SensorMetricsWaterQuality {
+  sensorId        String   @map("sensor_id")
+  eventTime       DateTime @map("event_time")
+  waterTemperature Float   @map("water_temperature")
+  phLevel          Float   @map("ph_level")
+  turbidity        Float
+  dissolvedOxygen  Float   @map("dissolved_oxygen")
+  conductivity     Float
+
+  sensor Sensor @relation("WaterQualityOnSensor", fields: [sensorId], references: [id])
+
+  @@id([sensorId, eventTime])
+  @@map("sensor_metrics_water_quality")
+}
