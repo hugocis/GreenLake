@@ -1,0 +1,13 @@
+{
+    "model": "Events",
+    "description": "Eventos culturales, sociales y económicos de la ciudad.",
+    "fields": {
+      "name": "string",
+      "start_date": "date",
+      "expected_attendance": "int",
+      "status": "string",
+      "sustainability_initiative": "boolean"
+    },
+    "actions": ["find", "filter", "list", "summary"]
+  }
+  
