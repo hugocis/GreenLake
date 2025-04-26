@@ -41,13 +41,12 @@ const validateString = (value: any, defaultValue = ''): string => {
 };
 
 // Lista de topics y mapeo a funciones de inserción
-const handlers: Record<string, (payload: any) => Promise<void>> = {
-  sensor_metrics_air: async (data) => {
+const handlers: Record<string, (payload: any) => Promise<void>> = {  sensor_metrics_air: async (data) => {
     console.log('Processing air metrics payload:', data);
     await prisma.sensorMetricsAir.create({
       data: {
-        sensorId: validateString(data.sensorId, 'unknown'),
-        eventTime: validateDate(data.eventTime),
+        sensorId: validateString(data.sensor_id, 'unknown'),
+        eventTime: validateDate(data.event_time),
         pm10: validateNumber(data.pm10),
         co: validateNumber(data.co),
         co2: validateNumber(data.co2),
@@ -56,54 +55,50 @@ const handlers: Record<string, (payload: any) => Promise<void>> = {
         so2: validateNumber(data.so2)
       }
     });
-  },
-  sensor_metrics_ambient: async (data) => {
+  },  sensor_metrics_ambient: async (data) => {
     console.log('Processing ambient metrics payload:', data);
     await prisma.sensorMetricsAmbient.create({
       data: {
-        sensorId: validateString(data.sensorId, 'unknown'),
-        eventTime: validateDate(data.eventTime),
+        sensorId: validateString(data.sensor_id, 'unknown'),
+        eventTime: validateDate(data.event_time),
         temperature: validateNumber(data.temperature),
         humidity: validateNumber(data.humidity),
-        solarRadiation: validateNumber(data.solarRadiation)
+        solarRadiation: validateNumber(data.solar_radiation)
       }
     });
-  },
-  sensor_metrics_traffic: async (data) => {
+  },  sensor_metrics_traffic: async (data) => {
     console.log('Processing traffic metrics payload:', data);
     await prisma.sensorMetricsTraffic.create({
       data: {
-        sensorId: validateString(data.sensorId, 'unknown'),
-        eventTime: validateDate(data.eventTime),
-        vehicleDensity: validateNumber(data.vehicleDensity),
-        avgSpeed: validateNumber(data.avgSpeed),
-        flowRate: validateNumber(data.flowRate),
+        sensorId: validateString(data.sensor_id, 'unknown'),
+        eventTime: validateDate(data.event_time),
+        vehicleDensity: validateNumber(data.vehicle_density),
+        avgSpeed: validateNumber(data.avg_speed),
+        flowRate: validateNumber(data.flow_rate),
         occupancy: validateNumber(data.occupancy),
-        congestionIndex: validateNumber(data.congestionIndex)
+        congestionIndex: validateNumber(data.congestion_index)
       }
     });
-  },
-  sensor_metrics_water_quality: async (data) => {
+  },  sensor_metrics_water_quality: async (data) => {
     console.log('Processing water quality metrics payload:', data);
     await prisma.sensorMetricsWaterQuality.create({
       data: {
-        sensorId: validateString(data.sensorId, 'unknown'),
-        eventTime: validateDate(data.eventTime),
-        waterTemperature: validateNumber(data.waterTemperature),
-        phLevel: validateNumber(data.phLevel),
+        sensorId: validateString(data.sensor_id, 'unknown'),
+        eventTime: validateDate(data.event_time),
+        waterTemperature: validateNumber(data.water_temperature),
+        phLevel: validateNumber(data.ph_level),
         turbidity: validateNumber(data.turbidity),
-        dissolvedOxygen: validateNumber(data.dissolvedOxygen),
+        dissolvedOxygen: validateNumber(data.dissolved_oxygen),
         conductivity: validateNumber(data.conductivity)
       }
     });
-  },
-  sensor_metrics_water_usage: async (data) => {
+  },  sensor_metrics_water_usage: async (data) => {
     console.log('Processing water usage metrics payload:', data);
     await prisma.sensorMetricsWaterUsage.create({
       data: {
-        sensorId: validateString(data.sensorId, 'unknown'),
-        eventTime: validateDate(data.eventTime),
-        usageLiters: validateNumber(data.usageLiters)
+        sensorId: validateString(data.sensor_id, 'unknown'),
+        eventTime: validateDate(data.event_time),
+        usageLiters: validateNumber(data.usage_liters)
       }
     });
   }
