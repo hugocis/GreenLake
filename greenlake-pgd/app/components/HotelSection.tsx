@@ -271,9 +271,6 @@ export default function HotelSection() {
                     </span>
                   )}
                 </div>
-                <button className="mt-4 w-full bg-[#34D399] hover:bg-[#10B981] text-white py-2 rounded-lg text-sm font-medium">
-                  Reservar Ahora
-                </button>
               </div>
             </div>
           ))}

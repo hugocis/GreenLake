@@ -3,25 +3,37 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useLocalAuth } from '../providers/LocalAuthProvider';
 import DebugAuthInfo from '../components/DebugAuthInfo';
 
-export default function LocalLoginPage() {
+// Simple client-side authentication for demo purposes
+export default function SimpleLoginPage() {
   const router = useRouter();
-  const { login, isLoading: authLoading, isAuthenticated, user } = useLocalAuth();
+  const [user, setUser] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Debug - Log authentication state
-  useEffect(() => {
-    console.log('Auth state in login page:', { isAuthenticated, user });
-  }, [isAuthenticated, user]);
-
   const [formData, setFormData] = useState({
     username: '',
     password: '',
     rememberMe: false
   });
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loginInProgress, setLoginInProgress] = useState(false);
+
+  // Check if user is already logged in
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem('simple_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+        setIsAuthenticated(true);
+      }
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -30,6 +42,7 @@ export default function LocalLoginPage() {
       [name]: type === 'checkbox' ? checked : value
     }));
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -38,38 +51,89 @@ export default function LocalLoginPage() {
       return;
     }
     
-    setIsLoading(true);
+    setLoginInProgress(true);
     setError(null);
     
     try {
-      console.log('Attempting login for user:', formData.username);
-      const result = await login(formData.username, formData.password);
-      console.log('Login result:', result);
+      // Simple authentication - accept any credentials
+      const newUser = {
+        id: `user-${Date.now()}`,
+        username: formData.username,
+        name: formData.username,
+        email: `${formData.username}@example.com`,
+        settings: {
+          preferredView: 'map',
+          darkMode: false,
+          language: 'es',
+        }
+      };
       
-      if (!result.success) {
-        setError(result.message || 'Nombre de usuario o contraseña incorrectos');
-      } else {
-        // Mostrar un mensaje de éxito al usuario antes de redirigir
-        // Esto ayuda a confirmar que el login fue exitoso
-        setError(null);
-        alert('Inicio de sesión exitoso. Bienvenido/a ' + formData.username);
-        
-        // Redirigir a la página principal después del inicio de sesión exitoso
-        setTimeout(() => {
-          router.push('/'); 
-          router.refresh(); // Actualizar para reflejar el estado de autenticación
-        }, 500); // Pequeña pausa para que el usuario vea el mensaje de éxito
-      }
+      // Store user in localStorage
+      localStorage.setItem('simple_user', JSON.stringify(newUser));
+      
+      // Update state
+      setUser(newUser);
+      setIsAuthenticated(true);
+      
+      // Show success message
+      alert(`¡Bienvenido/a ${formData.username}! Inicio de sesión exitoso.`);
+      
+      // Redirect to home page
+      setTimeout(() => {
+        router.push('/');
+      }, 500);
+      
     } catch (error) {
-      setError('Ocurrió un error al iniciar sesión');
       console.error('Error during login:', error);
+      setError('Ocurrió un error al iniciar sesión');
     } finally {
-      setIsLoading(false);
+      setLoginInProgress(false);
     }
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('simple_user');
+    setUser(null);
+    setIsAuthenticated(false);
+  };
+
+  // If already logged in, show a different UI
+  if (isAuthenticated && user) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-white to-green-50">
+        <DebugAuthInfo />
+        
+        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-xl shadow-lg">
+          <div className="text-center">
+            <div className="h-20 w-20 rounded-full bg-[#10B981] text-white text-2xl mx-auto flex items-center justify-center">
+              {user.username.charAt(0).toUpperCase()}
+            </div>
+            <h1 className="mt-4 text-2xl font-bold">¡Hola, {user.username}!</h1>
+            <p className="mt-2 text-gray-600">Ya has iniciado sesión</p>
+          </div>
+          
+          <div className="mt-8 space-y-4">
+            <button
+              onClick={() => router.push('/')}
+              className="w-full py-2 px-4 bg-[#10B981] text-white rounded-lg hover:bg-[#065F46] transition-colors"
+            >
+              Ir a la página principal
+            </button>
+            
+            <button
+              onClick={handleLogout}
+              className="w-full py-2 px-4 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-white to-green-50">
-      {/* Debug component to help us troubleshoot authentication */}
       <DebugAuthInfo />
       
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-xl shadow-lg transform transition-all hover:shadow-2xl duration-300">
@@ -78,10 +142,10 @@ export default function LocalLoginPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
           </svg>
           <h1 className="mt-4 text-3xl font-extrabold text-center text-gray-900">
-            Bienvenido de nuevo
+            Inicio de Sesión Simplificado
           </h1>
           <p className="mt-2 text-sm text-gray-600">
-            Inicia sesión para continuar tu aventura en Greenlake City
+            Introduce cualquier nombre de usuario y contraseña para continuar
           </p>
         </div>
         
@@ -143,35 +207,13 @@ export default function LocalLoginPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input 
-                id="rememberMe" 
-                name="rememberMe" 
-                type="checkbox"
-                checked={formData.rememberMe}
-                onChange={handleChange}
-                className="h-4 w-4 text-[#10B981] focus:ring-[#065F46] border-gray-300 rounded" 
-              />
-              <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
-                Recordarme
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <a href="#" className="font-medium text-[#10B981] hover:text-[#065F46]">
-                ¿Olvidaste tu contraseña?
-              </a>
-            </div>
-          </div>
-          
           <div>
             <button
               type="submit"
-              disabled={isLoading || authLoading}
-              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-[#10B981] hover:bg-[#065F46] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#10B981] transform transition-all duration-150 ease-in-out ${(isLoading || authLoading) ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
+              disabled={loginInProgress}
+              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-[#10B981] hover:bg-[#065F46] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#10B981] transform transition-all duration-150 ease-in-out ${loginInProgress ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
             >
-              {(isLoading || authLoading) ? (
+              {loginInProgress ? (
                 <>
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -191,24 +233,10 @@ export default function LocalLoginPage() {
           </div>
         </form>
         
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">o</span>
-            </div>
-          </div>
-          
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              ¿No tienes una cuenta?{' '}
-              <Link href="/local-register" className="font-medium text-[#10B981] hover:text-[#065F46] transition-colors">
-                Regístrate aquí
-              </Link>
-            </p>
-          </div>
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            Para esta demo, puedes usar cualquier usuario y contraseña
+          </p>
         </div>
       </div>
       

@@ -62,10 +62,30 @@ export const storeUser = async (userData: { username: string; password: string }
 
 // Función para obtener un usuario del localStorage
 export const getLocalUser = (username: string): LocalUser | null => {
-  if (typeof window === 'undefined') return null;
-  
-  const users = JSON.parse(localStorage.getItem('greenlake_users') || '[]');
-  return users.find((user: LocalUser) => user.username === username) || null;
+  try {
+    if (typeof window === 'undefined') {
+      console.warn('getLocalUser: window is undefined (server-side)');
+      return null;
+    }
+    
+    const usersJson = localStorage.getItem('greenlake_users');
+    if (!usersJson) {
+      console.warn('No users found in localStorage');
+      return null;
+    }
+    
+    const users = JSON.parse(usersJson);
+    if (!Array.isArray(users)) {
+      console.warn('Users is not an array', users);
+      return null;
+    }
+    
+    const user = users.find((user: LocalUser) => user.username === username);
+    return user || null;
+  } catch (error) {
+    console.error('Error in getLocalUser:', error);
+    return null;
+  }
 };
 
 // Configuración de NextAuth con almacenamiento local

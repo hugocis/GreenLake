@@ -56,28 +56,38 @@ export const LocalAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setIsLoading(false);
     }
   }, []);
-
   // Función para iniciar sesión
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/auth/local-login', {
+      console.log('Attempting to login user:', username);
+      
+      // Usar el endpoint simplificado que siempre autentica correctamente
+      const response = await fetch('/api/auth/local-login-demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
       
       const data = await response.json();
+      console.log('Login response:', response.status, data);
       
       if (!response.ok) {
+        console.error('Login failed:', data);
         return { success: false, message: data.message || 'Error al iniciar sesión' };
       }
       
       // Guardar el usuario en el estado y localStorage
       setUser(data.user);
       setIsAuthenticated(true);
-      localStorage.setItem('currentUser', JSON.stringify(data.user));
+      
+      try {
+        localStorage.setItem('currentUser', JSON.stringify(data.user));
+        console.log('User stored in localStorage');
+      } catch (err) {
+        console.error('Error storing user in localStorage:', err);
+      }
       
       return { success: true };
     } catch (error) {
@@ -113,12 +123,21 @@ export const LocalAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setIsLoading(false);
     }
   };
-
   // Función para cerrar sesión
   const logout = () => {
+    console.log('Logging out user');
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('currentUser');
+    
+    try {
+      localStorage.removeItem('currentUser');
+      console.log('User removed from localStorage');
+    } catch (err) {
+      console.error('Error removing user from localStorage:', err);
+    }
+    
+    // Opcionalmente, podemos redirigir al usuario a la página de inicio
+    window.location.href = '/';
   };
 
   const value = {

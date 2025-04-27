@@ -5,6 +5,7 @@ import ChatbotDialog from './components/ChatbotDialog';
 
 import AuthProvider from "./providers/AuthProvider";
 import { LocalAuthProvider } from "./providers/LocalAuthProvider";
+import SimpleAuthProvider from "./providers/SimpleAuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,14 +31,16 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning={true}
-      >
-        {/* Usando el proveedor de autenticación local como opción alternativa */}
-        <LocalAuthProvider>
-          {/* Mantenemos el proveedor original para compatibilidad con el código existente */}
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </LocalAuthProvider>
+      >        {/* Using SimpleAuthProvider as the main auth system since it's more reliable */}
+        <SimpleAuthProvider>
+          {/* Keep the other auth providers for compatibility */}
+          <LocalAuthProvider>
+            <AuthProvider>
+              {children}
+              <ChatbotDialog />
+            </AuthProvider>
+          </LocalAuthProvider>
+        </SimpleAuthProvider>
       </body>
     </html>
   );

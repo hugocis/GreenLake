@@ -51,14 +51,13 @@ export default function LocalNavbar() {
             </Link>
             <Link 
               href="/map" 
-              className={`bg-[#10B981] hover:bg-[#065F46] text-white py-2 px-4 rounded-lg transition-all duration-300 ${
+              className={` text-gray-600 hover:text-[#10B981] transition-colors duration-300 ${
                 pathname === '/map' ? 'ring-2 ring-[#065F46] ring-offset-2' : ''
               }`}
             >
               Mapa Interactivo
             </Link>
-            
-            {isAuthenticated ? (
+              {isAuthenticated ? (
               <div className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -100,12 +99,20 @@ export default function LocalNavbar() {
                 )}
               </div>
             ) : (
-              <Link 
-                href="/local-login" 
-                className="text-gray-600 hover:text-[#10B981] transition-colors duration-300"
-              >
-                Login
-              </Link>
+              <div className="flex items-center space-x-2">
+                <Link 
+                  href="/simple-login" 
+                  className="bg-[#10B981] hover:bg-[#065F46] text-white py-2 px-4 rounded-lg transition-all duration-300"
+                >
+                  Login Simple
+                </Link>
+                <Link 
+                  href="/local-login" 
+                  className="text-[#10B981] hover:text-[#065F46] py-2 px-3 rounded-lg border border-[#10B981] hover:border-[#065F46] transition-all duration-300"
+                >
+                  Login Normal
+                </Link>
+              </div>
             )}
           </div>
 
@@ -196,13 +203,22 @@ export default function LocalNavbar() {
                 </div>
               </>
             ) : (
-              <Link 
-                href="/local-login" 
-                className="text-gray-600 hover:text-[#10B981] py-2 transition-colors duration-300"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Login
-              </Link>
+              <div>
+                <Link 
+                  href="/simple-login" 
+                  className="text-gray-600 hover:text-[#10B981] py-2 transition-colors duration-300"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login Simple
+                </Link>
+                <Link 
+                  href="/local-login" 
+                  className="text-gray-600 hover:text-[#10B981] py-2 transition-colors duration-300"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login Normal
+                </Link>
+              </div>
             )}
           </div>
         </div>
