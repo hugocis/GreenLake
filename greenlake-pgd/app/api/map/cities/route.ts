@@ -2,10 +2,16 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, prefer-const */
 
+interface CityFromDB {
+  id: string;
+  name: string | null;
+  location: any;
+}
+
 export async function GET() {
   try {
     // Get cities with their locations
-    const cities = await prisma.$queryRaw`
+    const cities = await prisma.$queryRaw<CityFromDB[]>`
       SELECT 
         c.id,
         c.name,

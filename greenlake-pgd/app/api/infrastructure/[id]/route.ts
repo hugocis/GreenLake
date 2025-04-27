@@ -4,8 +4,10 @@ import prisma from '@/lib/prisma'
 // GET handler to fetch specific infrastructure by ID
 export async function GET(
   req: NextRequest,
-  { params: { id } }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
+
   try {
     const infrastructure = await prisma.infrastructure.findUnique({
       where: { id },
@@ -34,8 +36,10 @@ export async function GET(
 // PUT handler to update an infrastructure record
 export async function PUT(
   req: NextRequest,
-  { params: { id } }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
+
   try {
     const body = await req.json()
 
@@ -79,8 +83,10 @@ export async function PUT(
 // DELETE handler to remove an infrastructure
 export async function DELETE(
   req: NextRequest,
-  { params: { id } }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
+
   try {
     const existing = await prisma.infrastructure.findUnique({ where: { id } })
     if (!existing) {
