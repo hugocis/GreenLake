@@ -22,20 +22,26 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
-            <Link href="#attractions" className="text-gray-600 hover:text-[#10B981] transition-colors duration-300">
+            <Link href="/#attractions" className="text-gray-600 hover:text-[#10B981] transition-colors duration-300">
               Atracciones
             </Link>
-            <Link href="#events" className="text-gray-600 hover:text-[#10B981] transition-colors duration-300">
+            <Link href="/#events" className="text-gray-600 hover:text-[#10B981] transition-colors duration-300">
               Eventos
             </Link>
-            <Link href="#transport" className="text-gray-600 hover:text-[#10B981] transition-colors duration-300">
+            <Link href="/#transport" className="text-gray-600 hover:text-[#10B981] transition-colors duration-300">
               Transporte
             </Link>
-            <Link href="#restaurants" className="text-gray-600 hover:text-[#10B981] transition-colors duration-300">
+            <Link href="/#restaurants" className="text-gray-600 hover:text-[#10B981] transition-colors duration-300">
               Restaurantes
             </Link>
-            <Link href="#hotels" className="text-gray-600 hover:text-[#10B981] transition-colors duration-300">
+            <Link href="/#hotels" className="text-gray-600 hover:text-[#10B981] transition-colors duration-300">
               Hospedaje
+            </Link>
+            <Link 
+              href="/statistics" 
+              className="text-gray-600 hover:text-[#10B981] transition-colors duration-300"
+            >
+              Estadísticas
             </Link>
             <Link 
               href="/map" 
@@ -70,39 +76,46 @@ export default function Navbar() {
         <div className="md:hidden bg-white border-t border-gray-200 py-2">
           <div className="container mx-auto px-4 flex flex-col space-y-3">
             <Link 
-              href="#attractions" 
+              href="/#attractions" 
               className="text-gray-600 hover:text-[#10B981] py-2 transition-colors duration-300"
               onClick={() => setIsMenuOpen(false)}
             >
               Atracciones
             </Link>
             <Link 
-              href="#events" 
+              href="/#events" 
               className="text-gray-600 hover:text-[#10B981] py-2 transition-colors duration-300"
               onClick={() => setIsMenuOpen(false)}
             >
               Eventos
             </Link>
             <Link 
-              href="#transport" 
+              href="/#transport" 
               className="text-gray-600 hover:text-[#10B981] py-2 transition-colors duration-300"
               onClick={() => setIsMenuOpen(false)}
             >
               Transporte
             </Link>
             <Link 
-              href="#restaurants" 
+              href="/#restaurants" 
               className="text-gray-600 hover:text-[#10B981] py-2 transition-colors duration-300"
               onClick={() => setIsMenuOpen(false)}
             >
               Restaurantes
             </Link>
             <Link 
-              href="#hotels" 
+              href="/#hotels" 
               className="text-gray-600 hover:text-[#10B981] py-2 transition-colors duration-300"
               onClick={() => setIsMenuOpen(false)}
             >
               Hospedaje
+            </Link>
+            <Link 
+              href="/statistics" 
+              className="text-gray-600 hover:text-[#10B981] py-2 transition-colors duration-300"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Estadísticas
             </Link>
             <Link 
               href="/map" 
