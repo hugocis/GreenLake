@@ -774,3 +774,4 @@ model vip_network_data {
   @@index([app_type])
   @@index([service_type])
 }
+

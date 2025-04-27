@@ -29,12 +29,17 @@ export default function Navbar() {
               className="text-gray-600 hover:text-[#10B981] transition-colors duration-300"
             >
               Estadísticas
-            </Link>
-            <Link 
+            </Link>            <Link 
               href="/map" 
-              className="bg-[#10B981] hover:bg-[#065F46] text-white py-2 px-4 rounded-lg transition-all duration-300"
+              className="text-gray-600 hover:text-[#10B981] transition-colors duration-300"
             >
               Mapa Interactivo
+            </Link>
+            <Link 
+              href="/local-login" 
+              className="bg-[#10B981] hover:bg-[#065F46] text-white py-2 px-4 rounded-lg transition-all duration-300"
+            >
+              Login
             </Link>
           </div>
 
@@ -73,13 +78,19 @@ export default function Navbar() {
               onClick={() => setIsMenuOpen(false)}
             >
               Estadísticas
-            </Link>
-            <Link 
+            </Link>            <Link 
               href="/map" 
               className="bg-[#10B981] hover:bg-[#065F46] text-white py-2 px-4 rounded-lg inline-block transition-all duration-300"
               onClick={() => setIsMenuOpen(false)}
             >
               Mapa Interactivo
+            </Link>
+            <Link 
+              href="/local-login" 
+              className="text-gray-600 hover:text-[#10B981] py-2 transition-colors duration-300"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Login
             </Link>
           </div>
         </div>
