@@ -67,9 +67,14 @@ export async function GET(req: NextRequest) {
         lte: new Date(endDate),
       };
     }
-    
-    if (isFree !== null) {
+      if (isFree !== null) {
       filter.is_free = isFree;
+    }
+    
+    // Add status filter
+    const status = searchParams.get('status');
+    if (status) {
+      filter.status = status;
     }
 
     // Query to get total count for pagination

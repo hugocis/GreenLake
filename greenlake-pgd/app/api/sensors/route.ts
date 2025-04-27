@@ -27,9 +27,14 @@ export async function GET(req: NextRequest) {
     if (stateId) {
       filter.state_id = stateId;
     }
-    
-    if (roadId) {
+      if (roadId) {
       filter.road_id = roadId;
+    }
+    
+    // Add industrial zone filter
+    const industrialZone = searchParams.get('industrialZone');
+    if (industrialZone === 'true' || industrialZone === 'false') {
+      filter.industrial_zone = industrialZone === 'true';
     }
 
     // Query to get total count for pagination

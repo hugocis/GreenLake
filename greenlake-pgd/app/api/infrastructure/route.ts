@@ -9,9 +9,7 @@ export async function GET(req: NextRequest) {
     const cityId = searchParams.get('cityId');
     const name = searchParams.get('name');
     const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
-
-    // Build filter object based on query parameters
+    const offset = parseInt(searchParams.get('offset') || '0');    // Build filter object based on query parameters
     const filter: any = {};
     
     if (type) {
@@ -26,6 +24,14 @@ export async function GET(req: NextRequest) {
       filter.name = {
         contains: name,
         mode: 'insensitive', // Case-insensitive search
+      };
+    }
+    
+    // Add green score filter
+    const minGreenScore = searchParams.get('minGreenScore');
+    if (minGreenScore && !isNaN(parseInt(minGreenScore))) {
+      filter.green_score = {
+        gte: parseInt(minGreenScore)
       };
     }
 
