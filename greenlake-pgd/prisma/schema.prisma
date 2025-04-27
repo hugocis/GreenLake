@@ -775,23 +775,3 @@ model vip_network_data {
   @@index([service_type])
 }
 
-// Modelos para autenticación
-model User {
-  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  username      String       @unique
-  password      String
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  settings      UserSettings?
-}
-
-model UserSettings {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId        String   @unique @db.Uuid
-  preferredView String   @default("map") // "map", "list", "table", etc.
-  darkMode      Boolean  @default(false)
-  language      String   @default("es")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}

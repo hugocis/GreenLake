@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useLocalAuth } from '../providers/LocalAuthProvider';
 
-export default function RegisterPage() {
+export default function LocalRegisterPage() {
   const router = useRouter();
+  const { register, isLoading: authLoading } = useLocalAuth();
+  
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -14,6 +17,7 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -35,36 +39,37 @@ export default function RegisterPage() {
       return;
     }
     
+    if (!formData.terms) {
+      setError('Debes aceptar los términos y condiciones');
+      return;
+    }
+    
+    // Validación de seguridad de la contraseña
+    if (formData.password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-        }),
-      });
-
-      const data = await response.json();
+      const result = await register(formData.username, formData.password);
       
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al registrar el usuario');
+      if (!result.success) {
+        setError(result.message || 'Error al registrar el usuario');
+      } else {
+        // Redireccionar a la página de login tras registro exitoso
+        router.push('/local-login');
       }
-      
-      // Redireccionar a la página de login tras registro exitoso
-      router.push('/login');
     } catch (error: any) {
-      setError(error.message || 'Ocurrió un error durante el registro');
+      setError('Ocurrió un error durante el registro');
       console.error('Error during registration:', error);
     } finally {
       setIsLoading(false);
     }
   };
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-white to-green-50">
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-xl shadow-lg transform transition-all hover:shadow-2xl duration-300">
@@ -165,7 +170,15 @@ export default function RegisterPage() {
           </div>
 
           <div className="flex items-center">
-            <input id="terms" name="terms" type="checkbox" className="h-4 w-4 text-[#10B981] focus:ring-[#065F46] border-gray-300 rounded" required />
+            <input 
+              id="terms" 
+              name="terms" 
+              type="checkbox" 
+              checked={formData.terms}
+              onChange={handleChange}
+              className="h-4 w-4 text-[#10B981] focus:ring-[#065F46] border-gray-300 rounded" 
+              required 
+            />
             <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
               Acepto los <a href="#" className="font-medium text-[#10B981] hover:text-[#065F46]">términos y condiciones</a>
             </label>
@@ -174,10 +187,10 @@ export default function RegisterPage() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
-              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-[#10B981] hover:bg-[#065F46] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#10B981] transform transition-all duration-150 ease-in-out ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
+              disabled={isLoading || authLoading}
+              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-[#10B981] hover:bg-[#065F46] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#10B981] transform transition-all duration-150 ease-in-out ${(isLoading || authLoading) ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
             >
-              {isLoading ? (
+              {(isLoading || authLoading) ? (
                 <>
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -210,7 +223,7 @@ export default function RegisterPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               ¿Ya tienes una cuenta?{' '}
-              <Link href="/login" className="font-medium text-[#10B981] hover:text-[#065F46] transition-colors">
+              <Link href="/local-login" className="font-medium text-[#10B981] hover:text-[#065F46] transition-colors">
                 Inicia sesión
               </Link>
             </p>

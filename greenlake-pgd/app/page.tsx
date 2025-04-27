@@ -1,17 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
-import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import RestaurantSection from "./components/RestaurantSection";
 import HotelSection from "./components/HotelSection";
 import TransportSection from "./components/TransportSection";
 import ParkSection from "./components/ParkSection";
+import LocalNavbar from "./components/LocalNavbar";
 
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Navbar */}
-      <Navbar />
+      {/* Navbar - Using local authentication system */}
+      <LocalNavbar />
       
       {/* Hero Section */}
       <header className="bg-gradient-to-r from-[#10B981] to-[#065F46] text-white">
@@ -96,134 +96,6 @@ export default function Home() {
 
       {/* Hotel Section */}
       <HotelSection />
-
-      {/* Events Section */}
-      <section id="events" className="py-16 bg-[#F9FAFB]">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-[#065F46] text-center mb-3">
-            Eventos Destacados
-          </h2>
-          <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
-            Descubre los mejores eventos culturales, deportivos y de entretenimiento en Greenlake City
-          </p>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 flex">
-              <div className="w-1/3 bg-[#10B981] flex items-center justify-center p-6">
-                <div className="text-center">
-                  <span className="block text-2xl font-bold text-white">15</span>
-                  <span className="block text-lg text-white">Mayo</span>
-                </div>
-              </div>
-              <div className="w-2/3 p-6">
-                <span className="bg-[#D1FAE5] text-[#065F46] text-xs font-bold px-2 py-1 rounded">
-                  FESTIVAL
-                </span>
-                <h3 className="text-xl font-semibold text-[#065F46] mt-2 mb-2">Festival Eco Verde</h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  Celebración de la sostenibilidad con música en vivo, comida local y talleres ecológicos.
-                </p>
-                <div className="text-sm text-gray-500">
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#10B981] mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>Parque Central Verde</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 flex">
-              <div className="w-1/3 bg-[#10B981] flex items-center justify-center p-6">
-                <div className="text-center">
-                  <span className="block text-2xl font-bold text-white">22</span>
-                  <span className="block text-lg text-white">Mayo</span>
-                </div>
-              </div>
-              <div className="w-2/3 p-6">
-                <span className="bg-[#D1FAE5] text-[#065F46] text-xs font-bold px-2 py-1 rounded">
-                  CONFERENCIA
-                </span>
-                <h3 className="text-xl font-semibold text-[#065F46] mt-2 mb-2">Futuro Sostenible</h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  Conferencia sobre innovaciones en tecnología verde y desarrollo sostenible.
-                </p>
-                <div className="text-sm text-gray-500">
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#10B981] mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>Centro de Convenciones</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 flex">
-              <div className="w-1/3 bg-[#10B981] flex items-center justify-center p-6">
-                <div className="text-center">
-                  <span className="block text-2xl font-bold text-white">29</span>
-                  <span className="block text-lg text-white">Mayo</span>
-                </div>
-              </div>
-              <div className="w-2/3 p-6">
-                <span className="bg-[#D1FAE5] text-[#065F46] text-xs font-bold px-2 py-1 rounded">
-                  DEPORTIVO
-                </span>
-                <h3 className="text-xl font-semibold text-[#065F46] mt-2 mb-2">Maratón Verde</h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  Carrera familiar para promover el ejercicio y la conciencia ambiental en la ciudad.
-                </p>
-                <div className="text-sm text-gray-500">
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#10B981] mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>Avenida Principal</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 flex">
-              <div className="w-1/3 bg-[#10B981] flex items-center justify-center p-6">
-                <div className="text-center">
-                  <span className="block text-2xl font-bold text-white">5</span>
-                  <span className="block text-lg text-white">Junio</span>
-                </div>
-              </div>
-              <div className="w-2/3 p-6">
-                <span className="bg-[#D1FAE5] text-[#065F46] text-xs font-bold px-2 py-1 rounded">
-                  CULTURAL
-                </span>
-                <h3 className="text-xl font-semibold text-[#065F46] mt-2 mb-2">Feria Artesanal</h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  Exposición y venta de productos artesanales locales fabricados con materiales sostenibles.
-                </p>
-                <div className="text-sm text-gray-500">
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#10B981] mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>Plaza Central</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="text-center mt-10">
-            <button className="bg-[#065F46] hover:bg-[#047857] text-white font-bold py-3 px-8 rounded-lg transition-all duration-300">
-              Ver Todos los Eventos
-            </button>
-          </div>
-        </div>
-      </section>
 
       <Footer />
     </div>

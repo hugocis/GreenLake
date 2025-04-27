@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useState } from 'react';
-import Navbar from "../components/Navbar";
 import SimpleFooter from "../components/SimpleFooter";
 import Link from "next/link";
+import LocalNavbar from "../components/LocalNavbar";
 
 export default function MapPage() {
   const [mapType, setMapType] = useState('attractions');
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <LocalNavbar />
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">

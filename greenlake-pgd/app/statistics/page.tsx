@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Navbar from '../components/Navbar';
 import SimpleFooter from '../components/SimpleFooter';
 import Link from 'next/link';
+import LocalNavbar from '../components/LocalNavbar';
 // Nota: xlsx y file-saver se importan dinámicamente cuando se necesitan para mejorar el rendimiento
 
 type DataCategory = 'infrastructure' | 'events' | 'transport' | 'sensors';
@@ -437,10 +437,9 @@ export default function StatisticsPage() {
 
   const columns = getColumns();
   const filterConfigs = getFilterConfigs();
-
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <LocalNavbar />
         <main className="flex-grow container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-[#065F46] mb-2">Estadísticas de Greenlake City</h1>
         <p className="text-gray-600 mb-8">Explore y descargue datos detallados sobre la ciudad sostenible</p>
