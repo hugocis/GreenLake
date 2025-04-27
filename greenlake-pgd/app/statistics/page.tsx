@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import SimpleFooter from '../components/SimpleFooter';
 import Link from 'next/link';
+import { Bar, Doughnut, Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, LineElement, PointElement } from 'chart.js';
+
 // Nota: xlsx y file-saver se importan dinámicamente cuando se necesitan para mejorar el rendimiento
 
 type DataCategory = 'infrastructure' | 'events' | 'transport' | 'sensors';
@@ -56,6 +59,8 @@ const sensorTypes: FilterOption[] = [
   { value: 'water_quality', label: 'Calidad del Agua' },
   { value: 'water_usage', label: 'Uso del Agua' },
 ];
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, LineElement, PointElement);
 
 export default function StatisticsPage() {
   const router = useRouter();
@@ -117,6 +122,10 @@ export default function StatisticsPage() {
               // For transport routes, apply city filter to both origin and destination
               queryParams.append('originCityId', value);
               queryParams.append('destinationCityId', value);
+            } 
+            // Ensure 'type' filter is correctly appended for infrastructure
+            else if (category === 'infrastructure' && key === 'type') {
+              queryParams.append('type', value);
             } else {
               queryParams.append(key, value);
             }
@@ -438,10 +447,115 @@ export default function StatisticsPage() {
   const columns = getColumns();
   const filterConfigs = getFilterConfigs();
 
+  const getChartData = () => {
+    if (category === 'infrastructure') {
+      const labels = data.map(item => item.name || 'N/A');
+      const greenScores = data.map(item => item.green_score || 0);
+
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Puntuación Ecológica',
+            data: greenScores,
+            backgroundColor: 'rgba(53, 162, 235, 0.5)',
+          },
+        ],
+      };
+    }
+
+    if (category === 'events') {
+      const labels = data.map(item => item.name || 'N/A');
+      const attendance = data.map(item => item.expected_attendance || 0);
+
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Asistencia Esperada',
+            data: attendance,
+            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+          },
+        ],
+      };
+    }
+
+    return { labels: [], datasets: [] };
+  };
+
+  const getDoughnutChartData = () => {
+    if (category === 'sensors') {
+      const labels = data.map(item => item.sensor_type || 'N/A');
+      const counts = data.reduce((acc, item) => {
+        const type = item.sensor_type || 'N/A';
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {});
+
+      return {
+        labels: Object.keys(counts),
+        datasets: [
+          {
+            label: 'Sensores por Tipo',
+            data: Object.values(counts),
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.5)',
+              'rgba(54, 162, 235, 0.5)',
+              'rgba(255, 206, 86, 0.5)',
+              'rgba(75, 192, 192, 0.5)',
+              'rgba(153, 102, 255, 0.5)',
+              'rgba(255, 159, 64, 0.5)'
+            ],
+          },
+        ],
+      };
+    }
+
+    return { labels: [], datasets: [] };
+  };
+
+  const getLineChartData = () => {
+    if (category === 'infrastructure') {
+      const labels = data.map(item => item.name || 'N/A');
+      const greenScores = data.map(item => item.green_score || 0);
+
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Puntuación Ecológica',
+            data: greenScores,
+            borderColor: 'rgba(53, 162, 235, 1)',
+            backgroundColor: 'rgba(53, 162, 235, 0.2)',
+          },
+        ],
+      };
+    }
+
+    if (category === 'events') {
+      const labels = data.map(item => item.name || 'N/A');
+      const attendance = data.map(item => item.expected_attendance || 0);
+
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Asistencia Esperada',
+            data: attendance,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          },
+        ],
+      };
+    }
+
+    return { labels: [], datasets: [] };
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-        <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-[#065F46] mb-2">Estadísticas de Greenlake City</h1>
         <p className="text-gray-600 mb-8">Explore y descargue datos detallados sobre la ciudad sostenible</p>
           {/* Category Selector */}
@@ -651,6 +765,40 @@ export default function StatisticsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Chart Section */}
+        <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-xl font-semibold text-[#065F46] mb-4">Gráficos de {getCategoryLabel(category)}</h2>
+          <Bar data={getChartData()} options={{
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'top',
+              },
+              title: {
+                display: true,
+                text: `Gráficos de ${getCategoryLabel(category)}`,
+              },
+            },
+          }} />
+        </div>
+
+        {/* Line Chart Section */}
+        <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-xl font-semibold text-[#065F46] mb-4">Gráfico de Línea para {getCategoryLabel(category)}</h2>
+          <Line data={getLineChartData()} options={{
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'top',
+              },
+              title: {
+                display: true,
+                text: `Gráfico de Línea para ${getCategoryLabel(category)}`,
+              },
+            },
+          }} />
+        </div>
           {/* Pagination */}
         <div className="mt-6 flex flex-col md:flex-row items-center justify-between">
           <div className="text-sm text-gray-700 mb-4 md:mb-0">
@@ -709,7 +857,8 @@ export default function StatisticsPage() {
               »
             </button>
           </div>
-        </div>      </main>
+        </div>
+      </main>
       
       <SimpleFooter />
     </div>
