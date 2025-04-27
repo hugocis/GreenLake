@@ -23,9 +23,12 @@ export async function GET(req: NextRequest) {
     if (destinationCityId) {
       filter.destination_city_id = destinationCityId;
     }
-    
-    if (transportType) {
-      filter.transport_type = transportType;
+      if (transportType) {
+      filter.transport_type = {
+        equals: transportType,
+        mode: 'insensitive', // Búsqueda case-insensitive
+      };
+      console.log(`Aplicando filtro por tipo de transporte: ${transportType}`);
     }
     
     if (minEfficiencyScore !== null) {

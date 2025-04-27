@@ -28,9 +28,13 @@ export async function GET(req: NextRequest) {
     if (venueId) {
       filter.venue_id = venueId;
     }
-    
-    if (eventType) {
-      filter.event_type = eventType;
+      if (eventType) {
+      // Asegurar que el tipo sea case-insensitive
+      filter.event_type = {
+        equals: eventType,
+        mode: 'insensitive', // Búsqueda insensible a mayúsculas/minúsculas
+      };
+      console.log(`Aplicando filtro por tipo de evento: ${eventType}`);
     }
     
     if (name) {
@@ -38,6 +42,7 @@ export async function GET(req: NextRequest) {
         contains: name,
         mode: 'insensitive', // Case-insensitive search
       };
+      console.log(`Aplicando filtro por nombre: ${name}`);
     }
     
     if (minAttendance !== null) {

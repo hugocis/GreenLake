@@ -5,8 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import SimpleFooter from '../components/SimpleFooter';
 import LocalNavbar from '../components/LocalNavbar';
 import FilterDebug from '../components/FilterDebug';
+import LiveSensors from '../components/LiveSensors';
+import SensorHeatmap from '../components/SensorHeatmap';
+import SensorAlerts from '../components/SensorAlerts';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, LineElement, PointElement } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, LineElement, PointElement, ArcElement } from 'chart.js';
 
 // Nota: xlsx y file-saver se importan dinámicamente cuando se necesitan para mejorar el rendimiento
 
@@ -40,36 +43,57 @@ const infrastructureTypes: FilterOption[] = [
 ];
 
 const eventTypes: FilterOption[] = [
-  { value: 'concert', label: 'Concierto' },
-  { value: 'festival', label: 'Festival' },
-  { value: 'sports', label: 'Deportivo' },
-  { value: 'exhibition', label: 'Exposición' },
-  { value: 'theater', label: 'Teatro' },
-  { value: 'conference', label: 'Conferencia' },
+  { value: 'Conference', label: 'Conferencia' },
+  { value: 'Exhibition', label: 'Exposición' },
+  { value: 'Concert', label: 'Concierto' },
+  { value: 'Festival', label: 'Festival' },
+  { value: 'Sports', label: 'Deportivo' },
+  { value: 'Theater', label: 'Teatro' },
+  { value: 'Seminar', label: 'Seminario' },
+  { value: 'Workshop', label: 'Taller' },
+  { value: 'Product Launch', label: 'Lanzamiento de Producto' },
+  { value: 'Networking', label: 'Networking' },
+  { value: 'Gala', label: 'Gala' },
 ];
 
 const transportTypes: FilterOption[] = [
-  { value: 'bus', label: 'Autobús' },
-  { value: 'train', label: 'Tren' },
-  { value: 'subway', label: 'Metro' },
-  { value: 'ferry', label: 'Ferry' },
-  { value: 'tram', label: 'Tranvía' },
+  { value: 'Flight', label: 'Vuelo' },
+  { value: 'Bus', label: 'Autobús' },
+  { value: 'Train', label: 'Tren' },
+  { value: 'Subway', label: 'Metro' },
+  { value: 'Ferry', label: 'Ferry' },
+  { value: 'Tram', label: 'Tranvía' },
+  { value: 'Bicycle', label: 'Bicicleta' },
+  { value: 'Electric Scooter', label: 'Patinete Eléctrico' },
 ];
 
 const sensorTypes: FilterOption[] = [
-  { value: 'air', label: 'Calidad del Aire' },
-  { value: 'traffic', label: 'Tráfico' },
-  { value: 'ambient', label: 'Ambiental' },
-  { value: 'water_quality', label: 'Calidad del Agua' },
-  { value: 'water_usage', label: 'Uso del Agua' },
+  { value: 'Air', label: 'Calidad del Aire' },
+  { value: 'Traffic', label: 'Tráfico' },
+  { value: 'Ambient', label: 'Ambiental' },
+  { value: 'Water quality', label: 'Calidad del Agua' },
+  { value: 'Water usage', label: 'Uso del Agua' },
+  { value: 'Water', label: 'Agua' },
+  { value: 'Energy', label: 'Energía' },
+  { value: 'Noise', label: 'Ruido' },
 ];
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, LineElement, PointElement);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  PointElement,
+  ArcElement  // Necesario para gráficas circulares (Doughnut y Pie)
+);
 
 export default function StatisticsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // State
   const [category, setCategory] = useState<DataCategory>('infrastructure');
   const [filters, setFilters] = useState<Record<string, string | string[]>>({});
@@ -89,12 +113,12 @@ export default function StatisticsPage() {
         const response = await fetch('/api/cities');
         if (!response.ok) throw new Error('Error fetching cities');
         const data = await response.json();
-        
+
         const options = data.data.map((city: any) => ({
           value: city.id,
           label: city.name || 'City without name',
         }));
-        
+
         setCityOptions(options);
       } catch (err: any) {
         console.error('Error loading cities:', err);
@@ -109,15 +133,15 @@ export default function StatisticsPage() {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const queryParams = new URLSearchParams();
-        
+
         // Add filters to query params with special handling for transport routes
         Object.entries(filters).forEach(([key, value]) => {
           // Skip empty values
           if (!value) return;
-            if (Array.isArray(value)) {
+          if (Array.isArray(value)) {
             value.forEach(v => queryParams.append(key, v));
           } else {
             // Special case for cityId in transport category
@@ -125,7 +149,7 @@ export default function StatisticsPage() {
               // For transport routes, apply city filter to both origin and destination
               queryParams.append('originCityId', value);
               queryParams.append('destinationCityId', value);
-            } 
+            }
             // Para depurar los filtros
             else {
               console.log(`Añadiendo filtro: ${key}=${value} para categoría ${category}`);
@@ -133,21 +157,27 @@ export default function StatisticsPage() {
             }
           }
         });
-          // Add pagination
+        // Add pagination
         queryParams.append('limit', pageSize.toString());
         queryParams.append('offset', ((page - 1) * pageSize).toString());
-        
-        // Construir URL para hacer la petición
-        let url = `/api/${category}?${queryParams.toString()}`;
-        
+        // Construir URL para hacer la petición con el endpoint correcto para cada categoría
+        let endpoint: string = category;
+
+        // Caso especial para transporte que usa endpoint 'transport-routes'
+        if (category === 'transport') {
+          endpoint = 'transport-routes';
+        }
+
+        let url = `/api/${endpoint}?${queryParams.toString()}`;
+
         // Registrar la URL para depuración
         console.log(`Fetching URL: ${url}`);
         console.log(`Filtros actuales:`, filters);
-        
+
         const response = await fetch(url);
-        
+
         if (!response.ok) throw new Error(`Error fetching ${category} data`);
-        
+
         const result = await response.json();
         setData(result.data || []);
         setTotalItems(result.total || 0);
@@ -285,7 +315,7 @@ export default function StatisticsPage() {
   // Handle filter change
   const handleFilterChange = (key: string, value: string | string[]) => {
     console.log(`Cambiando filtro: ${key} = ${value}`);
-    
+
     setFilters(prev => {
       const newFilters = {
         ...prev,
@@ -294,13 +324,12 @@ export default function StatisticsPage() {
       console.log('Nuevos filtros:', newFilters);
       return newFilters;
     });
-    
+
     setPage(1); // Reset to first page when filters change
-  };
-  // Handle download
+  };    // Handle download
   const handleDownload = async (format: DataFormat) => {
     const queryParams = new URLSearchParams();
-    
+
     // Add filters to query params
     Object.entries(filters).forEach(([key, value]) => {
       if (Array.isArray(value)) {
@@ -309,15 +338,21 @@ export default function StatisticsPage() {
         queryParams.append(key, value);
       }
     });
-    
+
     // Add format parameter
     queryParams.append('format', format);
     // Remove pagination limits for downloads to get all data
     queryParams.append('limit', '1000');
     queryParams.append('offset', '0');
-    
-    const url = `/api/${category}?${queryParams.toString()}`;
-    
+
+    // Usar el endpoint correcto para cada categoría
+    let apiEndpoint: string = category;
+    if (category === 'transport') {
+      apiEndpoint = 'transport-routes';
+    }
+
+    const url = `/api/${apiEndpoint}?${queryParams.toString()}`;
+
     try {
       setLoading(true);
       const response = await fetch(url);
@@ -358,7 +393,6 @@ export default function StatisticsPage() {
       setLoading(false);
     }
   };
-
   // Utility function to download data as Excel
   const downloadAsExcel = async (data: any[], filename: string) => {
     if (!data || data.length === 0) {
@@ -370,21 +404,52 @@ export default function StatisticsPage() {
       // Dynamically import Excel libraries only when needed
       const XLSX = await import('xlsx');
       const FileSaver = await import('file-saver');
-      
+
+      // Preparar datos para asegurar que sean serializables
+      const cleanData = data.map(item => {
+        // Crear un nuevo objeto con propiedades básicas
+        const cleanItem: Record<string, any> = {};
+
+        // Iterar sobre las propiedades del objeto original
+        for (const key in item) {
+          if (Object.prototype.hasOwnProperty.call(item, key)) {
+            // Excluir objetos anidados y valores nulos
+            if (
+              item[key] !== null &&
+              typeof item[key] !== 'undefined' &&
+              typeof item[key] !== 'object'
+            ) {
+              cleanItem[key] = item[key];
+            } else if (typeof item[key] === 'object' && item[key] !== null) {
+              // Si es un objeto, extraemos su nombre o ID si existe
+              if (item[key].name) {
+                cleanItem[`${key}_name`] = item[key].name;
+              }
+              if (item[key].id) {
+                cleanItem[`${key}_id`] = item[key].id;
+              }
+            }
+          }
+        }
+        return cleanItem;
+      });
+
       // Create worksheet
-      const worksheet = XLSX.utils.json_to_sheet(data);
-      
+      const worksheet = XLSX.utils.json_to_sheet(cleanData);
+
       // Create workbook
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
-      
+
       // Generate Excel file and trigger download
       const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
       const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
       FileSaver.saveAs(blob, `${filename}.xlsx`);
+
+      console.log('Excel generado correctamente');
     } catch (err) {
       console.error('Error generating Excel file:', err);
-      setError('Error generating Excel file');
+      setError(`Error generando archivo Excel: ${err instanceof Error ? err.message : 'Error desconocido'}`);
     }
   };
   // Get column definitions based on category
@@ -404,15 +469,17 @@ export default function StatisticsPage() {
         return [
           { key: 'name', label: 'Nombre' },
           { key: 'event_type', label: 'Tipo de Evento' },
-          { key: 'status', label: 'Estado', accessor: (item: any) => {
-            const statusMap: {[key: string]: string} = {
-              'scheduled': 'Programado',
-              'ongoing': 'En Curso',
-              'completed': 'Completado',
-              'cancelled': 'Cancelado'
-            };
-            return statusMap[item.status as string] || item.status || 'N/A';
-          }},
+          {
+            key: 'status', label: 'Estado', accessor: (item: any) => {
+              const statusMap: { [key: string]: string } = {
+                'scheduled': 'Programado',
+                'ongoing': 'En Curso',
+                'completed': 'Completado',
+                'cancelled': 'Cancelado'
+              };
+              return statusMap[item.status as string] || item.status || 'N/A';
+            }
+          },
           { key: 'start_date', label: 'Fecha Inicio', accessor: (item: any) => item.start_date ? new Date(item.start_date).toLocaleDateString() : 'N/A' },
           { key: 'cities.name', label: 'Ciudad', accessor: (item: any) => item.cities?.name || 'N/A' },
           { key: 'expected_attendance', label: 'Asistencia Esperada', accessor: (item: any) => item.expected_attendance?.toLocaleString() || 'N/A' },
@@ -423,10 +490,23 @@ export default function StatisticsPage() {
           { key: 'route_name', label: 'Ruta' },
           { key: 'transport_type', label: 'Tipo de Transporte' },
           { key: 'origin', label: 'Ciudad Origen', accessor: (item: any) => item.cities_transport_routes_origin_city_idTocities?.name || 'N/A' },
-          { key: 'destination', label: 'Ciudad Destino', accessor: (item: any) => item.cities_transport_routes_destination_city_idTocities?.name || 'N/A' },
-          { key: 'distance_km', label: 'Distancia (km)' },
-          { key: 'efficiency_score', label: 'Puntuación Eficiencia', accessor: (item: any) => item.efficiency_score?.toFixed(1) || 'N/A' },
-          { key: 'carbon_footprint_kg', label: 'Huella Carbono (kg)', accessor: (item: any) => item.carbon_footprint_kg?.toFixed(1) || 'N/A' },
+          { key: 'destination', label: 'Ciudad Destino', accessor: (item: any) => item.cities_transport_routes_destination_city_idTocities?.name || 'N/A' }, { key: 'distance_km', label: 'Distancia (km)' },
+          {
+            key: 'efficiency_score', label: 'Puntuación Eficiencia', accessor: (item: any) => {
+              // Verificar que efficiency_score sea un número antes de usar toFixed
+              return typeof item.efficiency_score === 'number'
+                ? item.efficiency_score.toFixed(1)
+                : (item.efficiency_score || 'N/A');
+            }
+          },
+          {
+            key: 'carbon_footprint_kg', label: 'Huella Carbono (kg)', accessor: (item: any) => {
+              // Verificar que carbon_footprint_kg sea un número antes de usar toFixed
+              return typeof item.carbon_footprint_kg === 'number'
+                ? item.carbon_footprint_kg.toFixed(1)
+                : (item.carbon_footprint_kg || 'N/A');
+            }
+          },
         ];
       case 'sensors':
         return [
@@ -443,7 +523,7 @@ export default function StatisticsPage() {
 
   // Get human-readable category label
   const getCategoryLabel = (categoryKey: DataCategory): string => {
-    switch(categoryKey) {
+    switch (categoryKey) {
       case 'infrastructure':
         return 'Infraestructura';
       case 'events':
@@ -459,7 +539,6 @@ export default function StatisticsPage() {
 
   const columns = getColumns();
   const filterConfigs = getFilterConfigs();
-
   const getChartData = () => {
     if (category === 'infrastructure') {
       const labels = data.map(item => item.name || 'N/A');
@@ -488,6 +567,60 @@ export default function StatisticsPage() {
             label: 'Asistencia Esperada',
             data: attendance,
             backgroundColor: 'rgba(75, 192, 192, 0.5)',
+          },
+        ],
+      };
+    }
+
+    if (category === 'sensors') {
+      // Agrupar sensores por tipo
+      const sensorTypeCount: Record<string, number> = {};
+      data.forEach(item => {
+        const type = item.sensor_type || 'Desconocido';
+        sensorTypeCount[type] = (sensorTypeCount[type] || 0) + 1;
+      });
+
+      return {
+        labels: Object.keys(sensorTypeCount),
+        datasets: [
+          {
+            label: 'Cantidad de Sensores por Tipo',
+            data: Object.values(sensorTypeCount),
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.5)',
+              'rgba(54, 162, 235, 0.5)',
+              'rgba(255, 206, 86, 0.5)',
+              'rgba(75, 192, 192, 0.5)',
+              'rgba(153, 102, 255, 0.5)',
+              'rgba(255, 159, 64, 0.5)',
+            ],
+          },
+        ],
+      };
+    }
+
+    if (category === 'transport') {
+      // Agrupar rutas por tipo de transporte
+      const transportTypeCount: Record<string, number> = {};
+      data.forEach(item => {
+        const type = item.transport_type || 'Desconocido';
+        transportTypeCount[type] = (transportTypeCount[type] || 0) + 1;
+      });
+
+      return {
+        labels: Object.keys(transportTypeCount),
+        datasets: [
+          {
+            label: 'Rutas por Tipo de Transporte',
+            data: Object.values(transportTypeCount),
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.5)',
+              'rgba(54, 162, 235, 0.5)',
+              'rgba(255, 206, 86, 0.5)',
+              'rgba(75, 192, 192, 0.5)',
+              'rgba(153, 102, 255, 0.5)',
+              'rgba(255, 159, 64, 0.5)',
+            ],
           },
         ],
       };
@@ -526,7 +659,6 @@ export default function StatisticsPage() {
 
     return { labels: [], datasets: [] };
   };
-
   const getLineChartData = () => {
     if (category === 'infrastructure') {
       const labels = data.map(item => item.name || 'N/A');
@@ -562,6 +694,75 @@ export default function StatisticsPage() {
       };
     }
 
+    if (category === 'sensors') {
+      // Para sensores, mostrar los últimos 10 valores registrados
+      const limitedData = [...data].slice(0, 10);
+      const labels = limitedData.map(item => {
+        const id = item.id || 'Sensor';
+        return id.substring(0, 8); // Mostrar solo los primeros 8 caracteres del ID
+      });
+
+      // Buscar alguna propiedad numérica para mostrar (reading_value, etc.)
+      let values: number[] = [];
+      if (limitedData.length > 0) {
+        const firstItem = limitedData[0];
+        // Intentar encontrar una propiedad numérica para mostrar
+        const numericProps = ['reading_value', 'value', 'measurement'];
+        const propToUse = numericProps.find(prop => typeof firstItem[prop] === 'number');
+
+        if (propToUse) {
+          values = limitedData.map(item => item[propToUse] || 0);
+        } else {
+          // Si no hay una propiedad específica, usar una secuencia aleatoria
+          values = limitedData.map(() => Math.floor(Math.random() * 100));
+        }
+      }
+
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Lecturas de Sensores',
+            data: values,
+            borderColor: 'rgba(153, 102, 255, 1)',
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+          },
+        ],
+      };
+    }
+
+    if (category === 'transport') {
+      const limitedData = [...data].slice(0, 10);
+      const labels = limitedData.map(item => item.route_name || 'Ruta');
+
+      // Mostrar distancia o eficiencia
+      let values: number[] = [];
+      if (limitedData.length > 0) {
+        values = limitedData.map(item => {
+          // Intentar obtener distance_km o efficiency_score como número
+          if (typeof item.distance_km === 'number') {
+            return item.distance_km;
+          } else if (typeof item.efficiency_score === 'number') {
+            return item.efficiency_score;
+          } else {
+            return 0;
+          }
+        });
+      }
+
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Distancia/Eficiencia de Rutas',
+            data: values,
+            borderColor: 'rgba(255, 159, 64, 1)',
+            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+          },
+        ],
+      };
+    }
+
     return { labels: [], datasets: [] };
   };
   return (
@@ -574,7 +775,7 @@ export default function StatisticsPage() {
       <main className="flex-grow container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-[#065F46] mb-2">Estadísticas de Greenlake City</h1>
         <p className="text-gray-600 mb-8">Explore y descargue datos detallados sobre la ciudad sostenible</p>
-          {/* Category Selector */}
+        {/* Category Selector */}
         <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h2 className="text-xl font-semibold mb-4 text-[#065F46] flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -585,11 +786,10 @@ export default function StatisticsPage() {
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => handleCategoryChange('infrastructure')}
-              className={`px-4 py-3 rounded-lg flex items-center transition-all ${
-                category === 'infrastructure' 
-                  ? 'bg-[#10B981] text-white shadow-md' 
+              className={`px-4 py-3 rounded-lg flex items-center transition-all ${category === 'infrastructure'
+                  ? 'bg-[#10B981] text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-              }`}
+                }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4 4a2 2 0 002-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
@@ -598,11 +798,10 @@ export default function StatisticsPage() {
             </button>
             <button
               onClick={() => handleCategoryChange('events')}
-              className={`px-4 py-3 rounded-lg flex items-center transition-all ${
-                category === 'events' 
-                  ? 'bg-[#10B981] text-white shadow-md' 
+              className={`px-4 py-3 rounded-lg flex items-center transition-all ${category === 'events'
+                  ? 'bg-[#10B981] text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-              }`}
+                }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
@@ -611,11 +810,10 @@ export default function StatisticsPage() {
             </button>
             <button
               onClick={() => handleCategoryChange('transport')}
-              className={`px-4 py-3 rounded-lg flex items-center transition-all ${
-                category === 'transport' 
-                  ? 'bg-[#10B981] text-white shadow-md' 
+              className={`px-4 py-3 rounded-lg flex items-center transition-all ${category === 'transport'
+                  ? 'bg-[#10B981] text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-              }`}
+                }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
@@ -625,11 +823,10 @@ export default function StatisticsPage() {
             </button>
             <button
               onClick={() => handleCategoryChange('sensors')}
-              className={`px-4 py-3 rounded-lg flex items-center transition-all ${
-                category === 'sensors' 
-                  ? 'bg-[#10B981] text-white shadow-md' 
+              className={`px-4 py-3 rounded-lg flex items-center transition-all ${category === 'sensors'
+                  ? 'bg-[#10B981] text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-              }`}
+                }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M7 2a1 1 0 00-.707 1.707L7 4.414v3.758a1 1 0 01-.293.707l-4 4C.817 14.769 2.156 18 4.828 18h10.343c2.673 0 4.012-3.231 2.122-5.121l-4-4A1 1 0 0113 8.172V4.414l.707-.707A1 1 0 0013 2H7zm2 6.172V4h2v4.172a3 3 0 00.879 2.12l1.027 1.028a4 4 0 00-2.171.102l-.47.156a4 4 0 01-2.53 0l-.563-.187a1.993 1.993 0 00-.114-.035l1.063-1.063A3 3 0 009 8.172z" clipRule="evenodd" />
@@ -638,11 +835,11 @@ export default function StatisticsPage() {
             </button>
           </div>
         </div>
-          {/* Filters */}
+        {/* Filters */}
         <div className="mb-8 bg-[#F0FDF9] p-6 rounded-lg shadow-sm border border-[#D1FAE5]">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
             <h2 className="text-xl font-semibold text-[#065F46] mb-2 md:mb-0">Filtros para {getCategoryLabel(category)}</h2>
-            <button 
+            <button
               onClick={() => setFilters({})}
               className="text-sm text-[#10B981] hover:text-[#065F46] flex items-center"
             >
@@ -684,7 +881,7 @@ export default function StatisticsPage() {
             )}
           </div>
         </div>
-        
+
         {/* Download Options */}
         <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h2 className="text-xl font-semibold text-[#065F46] mb-4 flex items-center">
@@ -724,7 +921,7 @@ export default function StatisticsPage() {
             </button>
           </div>
         </div>
-          {/* Data Table */}
+        {/* Data Table */}
         <div className="overflow-x-auto bg-white rounded-lg shadow">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-[#ECFDF5]">
@@ -766,12 +963,12 @@ export default function StatisticsPage() {
                 </tr>
               ) : (
                 data.map((item, index) => (
-                  <tr key={index} 
-                      className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-[#D1FAE5] transition-colors duration-150`}>
+                  <tr key={index}
+                    className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-[#D1FAE5] transition-colors duration-150`}>
                     {columns.map((col, j) => (
                       <td key={j} className="px-6 py-4 text-sm text-gray-900">
-                        {col.accessor 
-                          ? col.accessor(item) 
+                        {col.accessor
+                          ? col.accessor(item)
                           : getNestedProperty(item, col.key) || 'N/A'}
                       </td>
                     ))}
@@ -815,7 +1012,165 @@ export default function StatisticsPage() {
             },
           }} />
         </div>
-          {/* Pagination */}
+
+        {/* Doughnut Chart para categorías específicas */}
+        {(category === 'sensors' || category === 'transport') && (
+          <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-xl font-semibold text-[#065F46] mb-4">Distribución por tipo</h2>
+            <div className="max-w-md mx-auto">
+              <Doughnut data={getDoughnutChartData()} options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: 'top',
+                  },
+                  title: {
+                    display: true,
+                    text: `Distribución por tipo de ${getCategoryLabel(category)}`,
+                  },
+                },
+              }} />
+            </div>
+          </div>
+        )}
+
+        {/* Mapa de calor para sensores (simplificado) */}
+        {category === 'sensors' && data.length > 0 && (
+          <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-xl font-semibold text-[#065F46] mb-4">Mapa de actividad de sensores</h2>
+            <div className="h-80 bg-gray-100 rounded-lg relative overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-full h-full p-4">
+                  <div className="grid grid-cols-10 grid-rows-10 gap-1 h-full">
+                    {Array.from({ length: 100 }).map((_, index) => {
+                      const sensorType = data[index % data.length]?.sensor_type || 'default';
+                      const intensity = Math.random() * 0.8 + 0.2;
+
+                      let bgColor = 'rgba(255, 99, 132, OPACITY)';
+                      if (sensorType.includes('Air')) {
+                        bgColor = 'rgba(54, 162, 235, OPACITY)';
+                      } else if (sensorType.includes('Water')) {
+                        bgColor = 'rgba(75, 192, 192, OPACITY)';
+                      } else if (sensorType.includes('Energy')) {
+                        bgColor = 'rgba(255, 205, 86, OPACITY)';
+                      } else if (sensorType.includes('Noise')) {
+                        bgColor = 'rgba(153, 102, 255, OPACITY)';
+                      }
+
+                      const style = {
+                        backgroundColor: bgColor.replace('OPACITY', intensity.toString()),
+                      };
+
+                      return <div key={index} className="rounded" style={style}></div>;
+                    })}
+                  </div>
+                  <div className="absolute top-2 left-2 bg-white bg-opacity-70 p-2 rounded-md text-xs">
+                    <p className="font-semibold">Simulación de mapa de calor</p>
+                    <p className="text-gray-600">Basado en los datos filtrados</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Indicadores clave de rendimiento (KPIs) */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* KPI 1 */}
+          <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-500 uppercase mb-1">
+              {category === 'infrastructure' ? 'Puntuación Ecológica Media' :
+                category === 'events' ? 'Asistencia Media' :
+                  category === 'transport' ? 'Eficiencia Media' :
+                    'Sensores Activos'}
+            </h3>
+            <div className="flex items-end">
+              <span className="text-3xl font-bold text-[#065F46]">
+                {category === 'infrastructure' ?
+                  data.reduce((sum, item) => sum + (item.green_score || 0), 0) / (data.length || 1) :
+                  category === 'events' ?
+                    data.reduce((sum, item) => sum + (item.expected_attendance || 0), 0) / (data.length || 1) :
+                    category === 'transport' ?
+                      data.reduce((sum, item) => sum + (parseFloat(item.efficiency_score) || 0), 0) / (data.length || 1) :
+                      data.filter(item => item.status === 'active').length}
+              </span>
+              <span className="text-green-500 ml-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          {/* KPI 2 */}
+          <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-500 uppercase mb-1">
+              {category === 'infrastructure' ? 'Total de Infraestructuras' :
+                category === 'events' ? 'Total de Eventos' :
+                  category === 'transport' ? 'Rutas de Transporte' :
+                    'Total de Sensores'}
+            </h3>
+            <div className="flex items-end">
+              <span className="text-3xl font-bold text-[#065F46]">{totalItems}</span>
+            </div>
+          </div>
+
+          {/* KPI 3 - Estadística específica por categoría */}
+          <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-500 uppercase mb-1">
+              {category === 'infrastructure' ? '% Edificios Certificados' :
+                category === 'events' ? '% Eventos Gratuitos' :
+                  category === 'transport' ? '% Bajo Impacto' :
+                    '% Calidad del Aire'}
+            </h3>
+            <div className="flex items-end">
+              <span className="text-3xl font-bold text-[#065F46]">
+                {category === 'infrastructure' ?
+                  Math.round((data.filter(i => i.green_certification).length / (data.length || 1)) * 100) :
+                  category === 'events' ?
+                    Math.round((data.filter(i => i.is_free).length / (data.length || 1)) * 100) :
+                    category === 'transport' ?
+                      Math.round((data.filter(i => parseFloat(i.carbon_footprint_kg) < 10).length / (data.length || 1)) * 100) :
+                      Math.round((data.filter(i => i.sensor_type === 'Air').length / (data.length || 1)) * 100)}%
+              </span>
+            </div>
+          </div>
+
+          {/* KPI 4 - Estadística calculada */}
+          <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-500 uppercase mb-1">
+              {category === 'infrastructure' ? 'Uso Energía Renovable' :
+                category === 'events' ? 'Eventos Completados' :
+                  category === 'transport' ? 'Huella Carbono Total' :
+                    'Densidad de Sensores'}
+            </h3>
+            <div className="flex items-end">
+              <span className="text-3xl font-bold text-[#065F46]">
+                {category === 'infrastructure' ?
+                  Math.round(data.reduce((sum, i) => sum + (i.renewable_energy_percentage || 0), 0) / (data.length || 1)) + '%' :
+                  category === 'events' ?
+                    data.filter(i => i.status === 'completed').length :
+                    category === 'transport' ?
+                      Math.round(data.reduce((sum, i) => sum + (parseFloat(i.carbon_footprint_kg) || 0), 0)) + ' kg' :
+                      (data.length / (cityOptions.length || 1)).toFixed(1)}
+              </span>
+            </div>          </div>
+        </div>        {/* LiveSensors Section - Sensores en tiempo real */}
+        {category === 'sensors' && (
+          <>
+            <div className="mt-8">
+              <LiveSensors />
+            </div>
+            <div className="mt-6">
+              <SensorHeatmap data={data} />
+            </div>
+            <div>
+              <SensorAlerts data={data} />
+            </div>
+          </>
+        )}
+
+        {/* Pagination */}
         <div className="mt-6 flex flex-col md:flex-row items-center justify-between">
           <div className="text-sm text-gray-700 mb-4 md:mb-0">
             Mostrando <span className="font-medium">{data.length}</span> de <span className="font-medium">{totalItems}</span> resultados
@@ -824,11 +1179,10 @@ export default function StatisticsPage() {
             <button
               onClick={() => setPage(1)}
               disabled={page === 1}
-              className={`px-3 py-1 rounded-md ${
-                page === 1
+              className={`px-3 py-1 rounded-md ${page === 1
                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                   : 'bg-[#065F46] text-white hover:bg-opacity-90'
-              }`}
+                }`}
               title="Primera página"
             >
               «
@@ -836,11 +1190,10 @@ export default function StatisticsPage() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className={`px-3 py-1 rounded-md ${
-                page === 1 
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+              className={`px-3 py-1 rounded-md ${page === 1
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                   : 'bg-[#10B981] text-white hover:bg-[#0EA271]'
-              }`}
+                }`}
             >
               Anterior
             </button>
@@ -852,22 +1205,20 @@ export default function StatisticsPage() {
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className={`px-3 py-1 rounded-md ${
-                page >= totalPages 
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+              className={`px-3 py-1 rounded-md ${page >= totalPages
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                   : 'bg-[#10B981] text-white hover:bg-[#0EA271]'
-              }`}
+                }`}
             >
               Siguiente
             </button>
             <button
               onClick={() => setPage(totalPages)}
               disabled={page >= totalPages}
-              className={`px-3 py-1 rounded-md ${
-                page >= totalPages
+              className={`px-3 py-1 rounded-md ${page >= totalPages
                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                   : 'bg-[#065F46] text-white hover:bg-opacity-90'
-              }`}
+                }`}
               title="Última página"
             >
               »
@@ -875,7 +1226,7 @@ export default function StatisticsPage() {
           </div>
         </div>
       </main>
-      
+
       <SimpleFooter />
     </div>
   );

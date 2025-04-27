@@ -15,13 +15,17 @@ export async function GET(req: NextRequest) {
 
     // Build filter object based on query parameters
     const filter: any = {};
-    
-    if (sensorType) {
-      filter.sensor_type = sensorType;
+      if (sensorType) {
+      filter.sensor_type = {
+        equals: sensorType,
+        mode: 'insensitive', // Búsqueda case-insensitive
+      };
+      console.log(`Aplicando filtro por tipo de sensor: ${sensorType}`);
     }
     
     if (cityId) {
       filter.city_id = cityId;
+      console.log(`Aplicando filtro por ciudad: ${cityId}`);
     }
     
     if (stateId) {
