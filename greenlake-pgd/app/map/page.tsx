@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Navbar from "../components/Navbar";
+import SimpleFooter from "../components/SimpleFooter";
 import Link from "next/link";
 
 export default function MapPage() {
@@ -102,16 +103,8 @@ export default function MapPage() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="bg-[#F9FAFB] py-8 mt-auto">
-        <div className="container mx-auto px-4">
-          <div className="text-center text-gray-500 text-sm">
-            <p>&copy; {new Date().getFullYear()} Greenlake City Tourism. Todos los derechos reservados.</p>
-          </div>
-        </div>
-      </footer>
+      </div>      {/* Simple Footer Component */}
+      <SimpleFooter />
     </div>
   );
 }

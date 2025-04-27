@@ -19,6 +19,8 @@ import {
   CreateTransportationHubRequest,
   CreateTransportRouteRequest,
   CreateElectricVehicleRequest,
+  Event,
+  Sensor,
 } from '@/lib/types';
 
 // Base fetch function with error handling
@@ -63,7 +65,7 @@ async function fetchAPI<T>(
 
 // Infrastructure API calls
 export const InfrastructureAPI = {
-  getAllInfrastructures: async (params?: { limit?: number }) => {
+  getAllInfrastructures: async (params?: { limit?: number, type?: string, cityId?: string }) => {
     const queryParams = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
     return fetchAPI<PaginatedResponse<Infrastructure>>(`/infrastructure${queryParams}`);
   },
@@ -110,6 +112,43 @@ export const RestaurantAPI = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  },
+};
+
+// Events API calls
+export const EventsAPI = {
+  getAllEvents: async (params?: {
+    cityId?: string;
+    venueId?: string;
+    eventType?: string;
+    name?: string;
+    minAttendance?: number;
+    maxAttendance?: number;
+    startDate?: string;
+    endDate?: string;
+    isFree?: boolean;
+    limit?: number;
+    offset?: number;
+    format?: 'json' | 'csv' | 'excel';
+  }) => {
+    const queryParams = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    return fetchAPI<PaginatedResponse<Event>>(`/events${queryParams}`);
+  },
+};
+
+// Sensors API calls
+export const SensorsAPI = {
+  getAllSensors: async (params?: {
+    sensorType?: string;
+    cityId?: string;
+    stateId?: string;
+    roadId?: string;
+    limit?: number;
+    offset?: number;
+    format?: 'json' | 'csv' | 'excel';
+  }) => {
+    const queryParams = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    return fetchAPI<PaginatedResponse<Sensor>>(`/sensors${queryParams}`);
   },
 };
 

@@ -213,3 +213,41 @@ export interface CreateElectricVehicleRequest {
   dol_vehicle_id?: number;
   census_tract?: number;
 }
+
+// Event type for statistics page
+export interface Event {
+  event_id: string;
+  city_id?: string;
+  venue_id?: string;
+  event_type?: string;
+  name: string;
+  description?: string;
+  start_date?: Date;
+  end_date?: Date;
+  expected_attendance?: number;
+  actual_attendance?: number;
+  ticket_price?: number;
+  status?: string;
+  organizer?: string;
+  contact_email?: string;
+  is_free?: boolean;
+  is_private?: boolean;
+  cities?: City;
+  infrastructure?: Infrastructure;
+}
+
+// Sensor type for statistics page
+export interface Sensor {
+  id: string;
+  sensor_type: string;
+  installed_at?: Date;
+  city_id?: string;
+  state_id?: string;
+  location?: any;
+  road_id?: string;
+  km_point?: number;
+  industrial_zone?: boolean;
+  cities?: City;
+  roads?: any;
+  states?: any;
+}
