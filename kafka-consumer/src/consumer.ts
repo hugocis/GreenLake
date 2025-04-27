@@ -44,24 +44,22 @@ const validateString = (value: any, defaultValue = ''): string => {
 async function ensureSensorExists(sensorId: string): Promise<void> {
   try {
     // Check if the sensor exists
-    const sensor = await prisma.sensor.findUnique({
+    const sensor = await prisma.sensors.findUnique({
       where: { id: sensorId }
     });
     
     // If sensor doesn't exist, create a placeholder sensor
     if (!sensor) {
       console.log(`Creating placeholder sensor with ID: ${sensorId}`);
-      await prisma.sensor.create({
+      await prisma.sensors.create({
         data: {
           id: sensorId,
-          installedAt: new Date(),
-          cityId: 'unknown',
-          stateId: 'unknown',
-          latitude: 0,
-          longitude: 0,
-          kmPoint: 0,
-          sensorType: 'unknown',
-          industrialZone: false
+          installed_at: new Date(),
+          city_id: 'unknown',
+          state_id: 'unknown',
+          // Remove latitude, longitude, and km_point if they don't exist in your schema
+          sensor_type: 'unknown',
+          industrial_zone: false
         }
       });
     }
@@ -81,10 +79,10 @@ const handlers: Record<string, (payload: any) => Promise<void>> = {  sensor_metr
     // Ensure the sensor exists before inserting metrics
     await ensureSensorExists(sensorId);
     
-    await prisma.sensorMetricsAir.create({
+    await prisma.sensor_metrics_air.create({
       data: {
-        sensorId: sensorId,
-        eventTime: validateDate(data.event_time),
+        sensor_id: sensorId,
+        event_time: validateDate(data.event_time),
         pm10: validateNumber(data.pm10),
         co: validateNumber(data.co),
         co2: validateNumber(data.co2),
@@ -102,13 +100,13 @@ const handlers: Record<string, (payload: any) => Promise<void>> = {  sensor_metr
     // Ensure the sensor exists before inserting metrics
     await ensureSensorExists(sensorId);
     
-    await prisma.sensorMetricsAmbient.create({
+    await prisma.sensor_metrics_ambient.create({
       data: {
-        sensorId: sensorId,
-        eventTime: validateDate(data.event_time),
+        sensor_id: sensorId,
+        event_time: validateDate(data.event_time),
         temperature: validateNumber(data.temperature),
         humidity: validateNumber(data.humidity),
-        solarRadiation: validateNumber(data.solar_radiation)
+        solar_radiation: validateNumber(data.solar_radiation)
       }
     });
   },  sensor_metrics_traffic: async (data) => {
@@ -120,15 +118,15 @@ const handlers: Record<string, (payload: any) => Promise<void>> = {  sensor_metr
     // Ensure the sensor exists before inserting metrics
     await ensureSensorExists(sensorId);
     
-    await prisma.sensorMetricsTraffic.create({
+    await prisma.sensor_metrics_traffic.create({
       data: {
-        sensorId: sensorId,
-        eventTime: validateDate(data.event_time),
-        vehicleDensity: validateNumber(data.vehicle_density),
-        avgSpeed: validateNumber(data.avg_speed),
-        flowRate: validateNumber(data.flow_rate),
+        sensor_id: sensorId,
+        event_time: validateDate(data.event_time),
+        vehicle_density: validateNumber(data.vehicle_density),
+        avg_speed: validateNumber(data.avg_speed),
+        flow_rate: validateNumber(data.flow_rate),
         occupancy: validateNumber(data.occupancy),
-        congestionIndex: validateNumber(data.congestion_index)
+        congestion_index: validateNumber(data.congestion_index)
       }
     });
   },  sensor_metrics_water_quality: async (data) => {
@@ -140,14 +138,14 @@ const handlers: Record<string, (payload: any) => Promise<void>> = {  sensor_metr
     // Ensure the sensor exists before inserting metrics
     await ensureSensorExists(sensorId);
     
-    await prisma.sensorMetricsWaterQuality.create({
+    await prisma.sensor_metrics_water_quality.create({
       data: {
-        sensorId: sensorId,
-        eventTime: validateDate(data.event_time),
-        waterTemperature: validateNumber(data.water_temperature),
-        phLevel: validateNumber(data.ph_level),
+        sensor_id: sensorId,
+        event_time: validateDate(data.event_time),
+        water_temperature: validateNumber(data.water_temperature),
+        ph_level: validateNumber(data.ph_level),
         turbidity: validateNumber(data.turbidity),
-        dissolvedOxygen: validateNumber(data.dissolved_oxygen),
+        dissolved_oxygen: validateNumber(data.dissolved_oxygen),
         conductivity: validateNumber(data.conductivity)
       }
     });
@@ -160,11 +158,11 @@ const handlers: Record<string, (payload: any) => Promise<void>> = {  sensor_metr
     // Ensure the sensor exists before inserting metrics
     await ensureSensorExists(sensorId);
     
-    await prisma.sensorMetricsWaterUsage.create({
+    await prisma.sensor_metrics_water_usage.create({
       data: {
-        sensorId: sensorId,
-        eventTime: validateDate(data.event_time),
-        usageLiters: validateNumber(data.usage_liters)
+        sensor_id: sensorId,
+        event_time: validateDate(data.event_time),
+        usage_liters: validateNumber(data.usage_liters)
       }
     });
   }
