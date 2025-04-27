@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../components/Navbar';
+import SimpleFooter from '../components/SimpleFooter';
 import Link from 'next/link';
 // Nota: xlsx y file-saver se importan dinámicamente cuando se necesitan para mejorar el rendimiento
 
@@ -708,16 +709,9 @@ export default function StatisticsPage() {
               »
             </button>
           </div>
-        </div>
-      </main>
+        </div>      </main>
       
-      <footer className="bg-[#065F46] text-white py-6">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <p>&copy; 2025 Greenlake City. Todos los derechos reservados.</p>
-          </div>
-        </div>
-      </footer>
+      <SimpleFooter />
     </div>
   );
 }
