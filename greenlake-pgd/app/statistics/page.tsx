@@ -5,9 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import SimpleFooter from '../components/SimpleFooter';
 import LocalNavbar from '../components/LocalNavbar';
 import FilterDebug from '../components/FilterDebug';
-import LiveSensors from '../components/LiveSensors';
-import SensorHeatmap from '../components/SensorHeatmap';
-import SensorAlerts from '../components/SensorAlerts';
+import SensorMetricsCard from '../components/SensorMetricsCard';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, LineElement, PointElement, ArcElement } from 'chart.js';
 
@@ -787,8 +785,8 @@ export default function StatisticsPage() {
             <button
               onClick={() => handleCategoryChange('infrastructure')}
               className={`px-4 py-3 rounded-lg flex items-center transition-all ${category === 'infrastructure'
-                  ? 'bg-[#10B981] text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                ? 'bg-[#10B981] text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                 }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -799,8 +797,8 @@ export default function StatisticsPage() {
             <button
               onClick={() => handleCategoryChange('events')}
               className={`px-4 py-3 rounded-lg flex items-center transition-all ${category === 'events'
-                  ? 'bg-[#10B981] text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                ? 'bg-[#10B981] text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                 }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -811,8 +809,8 @@ export default function StatisticsPage() {
             <button
               onClick={() => handleCategoryChange('transport')}
               className={`px-4 py-3 rounded-lg flex items-center transition-all ${category === 'transport'
-                  ? 'bg-[#10B981] text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                ? 'bg-[#10B981] text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                 }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -824,8 +822,8 @@ export default function StatisticsPage() {
             <button
               onClick={() => handleCategoryChange('sensors')}
               className={`px-4 py-3 rounded-lg flex items-center transition-all ${category === 'sensors'
-                  ? 'bg-[#10B981] text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                ? 'bg-[#10B981] text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                 }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -1158,83 +1156,77 @@ export default function StatisticsPage() {
         </div>        {/* LiveSensors Section - Sensores en tiempo real */}
         {category === 'sensors' && (
           <>
-            <div className="mt-8">
-              <LiveSensors />
+            {/* Sensores en Tiempo Real */}
+            <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <h2 className="text-xl font-semibold mb-4 text-[#065F46] flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+                Sensores en Tiempo Real
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Sensor de Calidad del Aire */}
+                <SensorMetricsCard
+                  title="Calidad del Aire"
+                  type="air"
+                  icon={
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                    </svg>
+                  }
+                  color="blue"
+                />
+
+                {/* Sensor Ambiental */}
+                <SensorMetricsCard
+                  title="Temperatura y Humedad"
+                  type="ambient"
+                  icon={
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  }
+                  color="green"
+                />
+
+                {/* Sensor de Tráfico */}
+                <SensorMetricsCard
+                  title="Tráfico"
+                  type="traffic"
+                  icon={
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                  }
+                  color="red"
+                />
+
+                {/* Sensor de Calidad del Agua */}
+                <SensorMetricsCard
+                  title="Calidad del Agua"
+                  type="water_quality"
+                  icon={
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                  }
+                  color="cyan"
+                />
+              </div>
             </div>
-            <div className="mt-6">
-              <SensorHeatmap data={data} />
-            </div>
-            <div>
-              <SensorAlerts data={data} />
-            </div>
+
+
           </>
         )}
-
-        {/* Pagination */}
-        <div className="mt-6 flex flex-col md:flex-row items-center justify-between">
-          <div className="text-sm text-gray-700 mb-4 md:mb-0">
-            Mostrando <span className="font-medium">{data.length}</span> de <span className="font-medium">{totalItems}</span> resultados
-          </div>
-          <div className="flex flex-wrap justify-center gap-2">
-            <button
-              onClick={() => setPage(1)}
-              disabled={page === 1}
-              className={`px-3 py-1 rounded-md ${page === 1
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'bg-[#065F46] text-white hover:bg-opacity-90'
-                }`}
-              title="Primera página"
-            >
-              «
-            </button>
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className={`px-3 py-1 rounded-md ${page === 1
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'bg-[#10B981] text-white hover:bg-[#0EA271]'
-                }`}
-            >
-              Anterior
-            </button>
-            <div className="flex items-center px-4">
-              <span className="px-3 py-1 bg-[#ECFDF5] border border-[#10B981] text-[#065F46] rounded-md font-medium">
-                {page} de {totalPages || 1}
-              </span>
-            </div>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className={`px-3 py-1 rounded-md ${page >= totalPages
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'bg-[#10B981] text-white hover:bg-[#0EA271]'
-                }`}
-            >
-              Siguiente
-            </button>
-            <button
-              onClick={() => setPage(totalPages)}
-              disabled={page >= totalPages}
-              className={`px-3 py-1 rounded-md ${page >= totalPages
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'bg-[#065F46] text-white hover:bg-opacity-90'
-                }`}
-              title="Última página"
-            >
-              »
-            </button>
-          </div>
-        </div>
       </main>
-
       <SimpleFooter />
     </div>
   );
 }
 
-// Helper function to access nested properties using dot notation (e.g., "cities.name")
-function getNestedProperty(obj: any, path: string): any {
+// Función para obtener propiedades anidadas de un objeto de forma segura
+function getNestedProperty(obj: any, path: string) {
   return path.split('.').reduce((prev, curr) => {
-    return prev ? prev[curr] : null;
+    return prev ? prev[curr] : undefined;
   }, obj);
 }
