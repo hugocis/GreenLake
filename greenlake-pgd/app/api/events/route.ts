@@ -95,29 +95,49 @@ export async function GET(req: NextRequest) {
       page: Math.floor(offset / limit) + 1,
       pageSize: limit,
       totalPages: Math.ceil(totalCount / limit),
-    };
-
-    // Handle different formats
+    };    // Handle different formats
     if (format === 'csv') {
-      // Generate CSV string
-      let csv = "event_id,name,event_type,city_id,venue_id,start_date,end_date,expected_attendance,actual_attendance,status,ticket_price,is_free\n";
+      // Generate CSV string with proper escaping
+      let csv = "event_id,name,event_type,city_name,venue_name,start_date,end_date,expected_attendance,actual_attendance,status,ticket_price,is_free\n";
       
       events.forEach(event => {
-        csv += `${event.event_id},${event.name},${event.event_type},${event.city_id},${event.venue_id},${event.start_date},${event.end_date},${event.expected_attendance},${event.actual_attendance},${event.status},${event.ticket_price},${event.is_free}\n`;
+        // Format fields and escape text that might contain commas
+        const name = event.name ? `"${event.name.replace(/"/g, '""')}"` : '';
+        const eventType = event.event_type ? `"${event.event_type.replace(/"/g, '""')}"` : '';
+        const cityName = event.cities?.name ? `"${event.cities.name.replace(/"/g, '""')}"` : '';
+        const venueName = event.infrastructure?.name ? `"${event.infrastructure.name.replace(/"/g, '""')}"` : '';
+        const startDate = event.start_date ? new Date(event.start_date).toISOString() : '';
+        const endDate = event.end_date ? new Date(event.end_date).toISOString() : '';
+        const status = event.status ? `"${event.status.replace(/"/g, '""')}"` : '';
+        
+        csv += `"${event.event_id}",${name},${eventType},${cityName},${venueName},${startDate},${endDate},${event.expected_attendance || ''},${event.actual_attendance || ''},${status},${event.ticket_price || ''},${event.is_free === true ? 'true' : (event.is_free === false ? 'false' : '')}\n`;
       });
       
       return new NextResponse(csv, {
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': 'attachment; filename=events.csv'
+          'Content-Disposition': 'attachment; filename=greenlake_events.csv'
         }
       });
     } else if (format === 'excel') {
       // For Excel, we return a JSON that will be processed by the frontend
-      return NextResponse.json(response);
+      return NextResponse.json(response, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     } else {
       // Default JSON response
-      return NextResponse.json(response);
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Solo añadimos Content-Disposition para forzar la descarga si el formato es json
+      if (format === 'json') {
+        headers['Content-Disposition'] = 'attachment; filename=greenlake_events.json';
+      }
+      
+      return NextResponse.json(response, { headers });
     }
   } catch (error: any) {
     console.error('Error fetching events:', error);

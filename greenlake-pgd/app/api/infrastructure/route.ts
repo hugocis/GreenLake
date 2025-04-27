@@ -32,9 +32,7 @@ export async function GET(req: NextRequest) {
     // Query to get total count for pagination
     const totalCount = await prisma.infrastructure.count({
       where: filter,
-    });
-
-    // Main query with pagination
+    });    // Main query with pagination
     const infrastructures = await prisma.infrastructure.findMany({
       where: filter,
       include: {
@@ -48,15 +46,61 @@ export async function GET(req: NextRequest) {
       skip: offset,
       take: limit,
     });
-
-    return NextResponse.json({
+    
+    // Create response object
+    const response = {
       data: infrastructures,
-      pagination: {
-        total: totalCount,
-        limit,
-        offset,
-      },
-    });
+      total: totalCount,
+      page: Math.floor(offset / limit) + 1,
+      pageSize: limit,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+    
+    // Get format parameter for downloads
+    const format = searchParams.get('format') || 'json';
+    
+    // Handle different formats
+    if (format === 'csv') {
+      // Generate CSV string
+      let csv = "id,type,subtype,name,green_score,city_id,city_name,opening_date\n";
+      
+      infrastructures.forEach(infra => {
+        // Format fields and escape text that might contain commas
+        const name = infra.name ? `"${infra.name.replace(/"/g, '""')}"` : '';
+        const type = infra.type ? `"${infra.type.replace(/"/g, '""')}"` : '';
+        const subtype = infra.subtype ? `"${infra.subtype.replace(/"/g, '""')}"` : '';
+        const cityName = infra.cities?.name ? `"${infra.cities.name.replace(/"/g, '""')}"` : '';
+        const openingDate = infra.opening_date ? new Date(infra.opening_date).toISOString() : '';
+        
+        csv += `"${infra.id}",${type},${subtype},${name},${infra.green_score || ''},"${infra.city_id || ''}",${cityName},${openingDate}\n`;
+      });
+      
+      return new NextResponse(csv, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': 'attachment; filename=greenlake_infrastructure.csv'
+        }
+      });
+    } else if (format === 'excel') {
+      // For Excel, we return a JSON that will be processed by the frontend
+      return NextResponse.json(response, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    } else {
+      // Default JSON response
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Solo añadimos Content-Disposition para forzar la descarga si el formato es json
+      if (format === 'json') {
+        headers['Content-Disposition'] = 'attachment; filename=greenlake_infrastructure.json';
+      }
+      
+      return NextResponse.json(response, { headers });
+    }
   } catch (error) {
     console.error('Error fetching infrastructures:', error);
     return NextResponse.json({ error: 'Failed to fetch infrastructures' }, { status: 500 });

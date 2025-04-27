@@ -43,9 +43,7 @@ export async function GET(req: NextRequest) {
     // Query to get total count for pagination
     const totalCount = await prisma.transport_routes.count({
       where: filter,
-    });
-
-    // Main query with pagination
+    });    // Main query with pagination
     const routes = await prisma.transport_routes.findMany({
       where: filter,
       include: {
@@ -60,15 +58,62 @@ export async function GET(req: NextRequest) {
         route_name: 'asc',
       },
     });
-
-    return NextResponse.json({
+    
+    // Create response object
+    const response = {
       data: routes,
-      pagination: {
-        total: totalCount,
-        limit,
-        offset,
-      },
-    });
+      total: totalCount,
+      page: Math.floor(offset / limit) + 1,
+      pageSize: limit,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+    
+    // Get format parameter for downloads
+    const format = searchParams.get('format') || 'json';
+    
+    // Handle different formats
+    if (format === 'csv') {
+      // Generate CSV string
+      let csv = "route_id,route_name,transport_type,origin_city,destination_city,distance_km,travel_minutes,price,efficiency_score,carbon_footprint_kg\n";
+      
+      routes.forEach(route => {
+        // Format fields and escape text with potential commas
+        const routeName = route.route_name ? `"${route.route_name.replace(/"/g, '""')}"` : '';
+        const transportType = route.transport_type ? `"${route.transport_type.replace(/"/g, '""')}"` : '';
+        const originCity = route.cities_transport_routes_origin_city_idTocities?.name ? 
+          `"${route.cities_transport_routes_origin_city_idTocities.name.replace(/"/g, '""')}"` : '';
+        const destCity = route.cities_transport_routes_destination_city_idTocities?.name ? 
+          `"${route.cities_transport_routes_destination_city_idTocities.name.replace(/"/g, '""')}"` : '';
+        
+        csv += `"${route.route_id}",${routeName},${transportType},${originCity},${destCity},${route.distance_km || ''},${route.travel_minutes || ''},${route.price || ''},${route.efficiency_score || ''},${route.carbon_footprint_kg || ''}\n`;
+      });
+      
+      return new NextResponse(csv, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': 'attachment; filename=greenlake_transport_routes.csv'
+        }
+      });
+    } else if (format === 'excel') {
+      // For Excel, we return a JSON that will be processed by the frontend
+      return NextResponse.json(response, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    } else {
+      // Default JSON response
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Solo añadimos Content-Disposition para forzar la descarga si el formato es json
+      if (format === 'json') {
+        headers['Content-Disposition'] = 'attachment; filename=greenlake_transport_routes.json';
+      }
+      
+      return NextResponse.json(response, { headers });
+    }
   } catch (error) {
     console.error('Error fetching transport routes:', error);
     return NextResponse.json({ error: 'Failed to fetch transport routes' }, { status: 500 });

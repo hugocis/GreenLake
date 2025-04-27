@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import Link from 'next/link';
+// Nota: xlsx y file-saver se importan dinámicamente cuando se necesitan para mejorar el rendimiento
 
 type DataCategory = 'infrastructure' | 'events' | 'transport' | 'sensors';
 type DataFormat = 'json' | 'csv' | 'excel';
@@ -203,7 +204,6 @@ export default function StatisticsPage() {
     }));
     setPage(1); // Reset to first page when filters change
   };
-
   // Handle download
   const handleDownload = async (format: DataFormat) => {
     const queryParams = new URLSearchParams();
@@ -217,46 +217,82 @@ export default function StatisticsPage() {
       }
     });
     
-    // Add format and remove pagination for downloads
+    // Add format parameter
     queryParams.append('format', format);
+    // Remove pagination limits for downloads to get all data
+    queryParams.append('limit', '1000');
+    queryParams.append('offset', '0');
     
     const url = `/api/${category}?${queryParams.toString()}`;
     
-    if (format === 'csv') {
-      // For CSV, trigger a direct download
-      window.location.href = url;
-    } else if (format === 'excel') {
-      try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Error fetching ${category} data for Excel`);
-        
+    try {
+      setLoading(true);
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Error fetching ${category} data`);
+
+      if (format === 'csv') {
+        // For CSV, get the blob and download
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `greenlake-${category}-data.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
+      } else if (format === 'excel') {
+        // For Excel, get JSON data and convert to Excel
         const data = await response.json();
-        
-        // Use client-side Excel generation library (you'll need to install one)
-        // For this example, assuming we have a utility function to convert to Excel
-        downloadAsExcel(data.data, `${category}-data`);
-      } catch (err) {
-        console.error('Error generating Excel:', err);
-        setError('Error generating Excel file');
+        await downloadAsExcel(data.data || [], `greenlake-${category}-data`);
+      } else {
+        // For JSON, download as a file
+        const data = await response.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `greenlake-${category}-data.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
       }
-    } else {
-      // For JSON, open in a new tab
-      window.open(url, '_blank');
+    } catch (err: any) {
+      console.error(`Error downloading ${format} data:`, err);
+      setError(err.message || `Error downloading data in ${format} format`);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Utility function to download data as Excel (placeholder)
-  const downloadAsExcel = (data: any[], filename: string) => {
-    // In a real implementation, you would use a library like xlsx
-    // This is just a placeholder to show the concept
-    alert('Excel download would happen here. In a real implementation, use a library like xlsx.');
-    
-    // Example implementation with xlsx would be:
-    // import * as XLSX from 'xlsx';
-    // const worksheet = XLSX.utils.json_to_sheet(data);
-    // const workbook = XLSX.utils.book_new();
-    // XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
-    // XLSX.writeFile(workbook, `${filename}.xlsx`);
+  // Utility function to download data as Excel
+  const downloadAsExcel = async (data: any[], filename: string) => {
+    if (!data || data.length === 0) {
+      setError('No data available to download');
+      return;
+    }
+
+    try {
+      // Dynamically import Excel libraries only when needed
+      const XLSX = await import('xlsx');
+      const FileSaver = await import('file-saver');
+      
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
+      
+      // Generate Excel file and trigger download
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+      FileSaver.saveAs(blob, `${filename}.xlsx`);
+    } catch (err) {
+      console.error('Error generating Excel file:', err);
+      setError('Error generating Excel file');
+    }
   };
 
   // Get column definitions based on category

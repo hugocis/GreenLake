@@ -56,30 +56,43 @@ export async function GET(req: NextRequest) {
       page: Math.floor(offset / limit) + 1,
       pageSize: limit,
       totalPages: Math.ceil(totalCount / limit),
-    };
-
-    // Handle different formats
+    };    // Handle different formats
     if (format === 'csv') {
-      // Generate CSV string
-      let csv = "id,sensor_type,installed_at,city_id,state_id,road_id,km_point,industrial_zone\n";
+      // Generate CSV string with better format and escaping
+      let csv = "id,sensor_type,installed_at,city_id,city_name,state_id,road_id,km_point,industrial_zone\n";
       
       sensors.forEach(sensor => {
-        csv += `${sensor.id},${sensor.sensor_type},${sensor.installed_at},${sensor.city_id},${sensor.state_id},${sensor.road_id},${sensor.km_point},${sensor.industrial_zone}\n`;
+        // Format date properly and escape fields with commas
+        const installedAt = sensor.installed_at ? new Date(sensor.installed_at).toISOString() : '';
+        const cityName = sensor.cities?.name ? `"${sensor.cities.name.replace(/"/g, '""')}"` : '';
+        
+        csv += `"${sensor.id}",${sensor.sensor_type},${installedAt},"${sensor.city_id || ''}",${cityName},"${sensor.state_id || ''}","${sensor.road_id || ''}",${sensor.km_point || ''},${sensor.industrial_zone || false}\n`;
       });
       
       return new NextResponse(csv, {
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': 'attachment; filename=sensors.csv'
+          'Content-Disposition': 'attachment; filename=greenlake_sensors.csv'
         }
       });
     } else if (format === 'excel') {
       // For Excel, we return a JSON that will be processed by the frontend
-      // The actual Excel conversion will happen in the browser using a library
-      return NextResponse.json(response);
-    } else {
-      // Default JSON response
-      return NextResponse.json(response);
+      return NextResponse.json(response, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+    } else {      // Default JSON response
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Solo añadimos Content-Disposition para forzar la descarga si el formato es json
+      if (format === 'json') {
+        headers['Content-Disposition'] = 'attachment; filename=greenlake_sensors.json';
+      }
+      
+      return NextResponse.json(response, { headers });
     }
   } catch (error: any) {
     console.error('Error fetching sensors:', error);
