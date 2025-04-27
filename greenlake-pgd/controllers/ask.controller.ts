@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { processQuestion } from '../../services/ai.services';
+import { processQuestion } from '../services/ai.services';
 import dayjs from 'dayjs';
 
 export const askController = async (req: Request, res: Response): Promise<void> => {

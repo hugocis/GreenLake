@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ChatbotDialog from './components/ChatbotDialog';
+
 import AuthProvider from "./providers/AuthProvider";
 import { LocalAuthProvider } from "./providers/LocalAuthProvider";
 
