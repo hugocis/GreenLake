@@ -9,15 +9,23 @@ export async function GET(req: NextRequest) {
     const cityId = searchParams.get('cityId');
     const name = searchParams.get('name');
     const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');    // Build filter object based on query parameters
+    const offset = parseInt(searchParams.get('offset') || '0');
+    
+    // Build filter object based on query parameters
     const filter: any = {};
     
     if (type) {
-      filter.type = type;
+      // Asegurar que el tipo sea case-insensitive
+      filter.type = {
+        equals: type,
+        mode: 'insensitive', // Búsqueda insensible a mayúsculas/minúsculas
+      };
+      console.log(`Aplicando filtro por tipo: ${type}`);
     }
     
     if (cityId) {
       filter.city_id = cityId;
+      console.log(`Aplicando filtro por ciudad: ${cityId}`);
     }
     
     if (name) {
@@ -25,6 +33,7 @@ export async function GET(req: NextRequest) {
         contains: name,
         mode: 'insensitive', // Case-insensitive search
       };
+      console.log(`Aplicando filtro por nombre: ${name}`);
     }
     
     // Add green score filter
@@ -33,12 +42,17 @@ export async function GET(req: NextRequest) {
       filter.green_score = {
         gte: parseInt(minGreenScore)
       };
+      console.log(`Aplicando filtro por puntuación verde mínima: ${minGreenScore}`);
     }
+
+    console.log('Filtros aplicados:', filter);
 
     // Query to get total count for pagination
     const totalCount = await prisma.infrastructure.count({
       where: filter,
-    });    // Main query with pagination
+    });
+    
+    // Main query with pagination
     const infrastructures = await prisma.infrastructure.findMany({
       where: filter,
       include: {
@@ -52,6 +66,8 @@ export async function GET(req: NextRequest) {
       skip: offset,
       take: limit,
     });
+    
+    console.log(`Se encontraron ${infrastructures.length} de ${totalCount} resultados`);
     
     // Create response object
     const response = {
@@ -100,54 +116,20 @@ export async function GET(req: NextRequest) {
         'Content-Type': 'application/json'
       };
       
-      // Solo añadimos Content-Disposition para forzar la descarga si el formato es json
-      if (format === 'json') {
+      // Add download filename if client is downloading
+      if (searchParams.get('download') === 'true') {
         headers['Content-Disposition'] = 'attachment; filename=greenlake_infrastructure.json';
       }
       
-      return NextResponse.json(response, { headers });
+      return NextResponse.json(response, { 
+        headers: headers
+      });
     }
   } catch (error) {
-    console.error('Error fetching infrastructures:', error);
-    return NextResponse.json({ error: 'Failed to fetch infrastructures' }, { status: 500 });
-  }
-}
-
-// POST handler to create a new infrastructure record
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    
-    // Validate required fields
-    if (!body.type) {
-      return NextResponse.json({ error: "Type is required" }, { status: 400 });
-    }
-
-    // Create new infrastructure record
-    const infrastructure = await prisma.infrastructure.create({
-      data: {
-        id: body.id || undefined, // Add ID field or let Prisma auto-generate it
-        type: body.type,
-        subtype: body.subtype,
-        name: body.name,
-        opening_date: body.opening_date ? new Date(body.opening_date) : null,
-        green_score: body.green_score,
-        carbon_footprint_kg_per_year: body.carbon_footprint_kg_per_year,
-        energy_efficiency_score: body.energy_efficiency_score,
-        water_efficiency_score: body.water_efficiency_score,
-        waste_management_score: body.waste_management_score,
-        renewable_energy_percentage: body.renewable_energy_percentage,
-        green_certification: body.green_certification,
-        city_id: body.city_id,
-      },
-      include: {
-        cities: true,
-      },
-    });
-
-    return NextResponse.json({ data: infrastructure }, { status: 201 });
-  } catch (error) {
-    console.error('Error creating infrastructure:', error);
-    return NextResponse.json({ error: 'Failed to create infrastructure' }, { status: 500 });
+    console.error('Error fetching infrastructure data:', error);
+    return NextResponse.json(
+      { error: 'Error fetching infrastructure data' },
+      { status: 500 }
+    );
   }
 }

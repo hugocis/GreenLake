@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SimpleFooter from '../components/SimpleFooter';
-import Link from 'next/link';
 import LocalNavbar from '../components/LocalNavbar';
+import FilterDebug from '../components/FilterDebug';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, LineElement, PointElement } from 'chart.js';
 
@@ -26,13 +26,17 @@ interface FilterConfig {
 }
 
 const infrastructureTypes: FilterOption[] = [
-  { value: 'restaurant', label: 'Restaurante' },
-  { value: 'hotel', label: 'Hotel' },
-  { value: 'park', label: 'Parque' },
-  { value: 'transportation_hub', label: 'Centro de Transporte' },
-  { value: 'venue', label: 'Recinto' },
-  { value: 'hospital', label: 'Hospital' },
-  { value: 'school', label: 'Escuela' },
+  { value: 'Restaurant', label: 'Restaurante' },
+  { value: 'Hotel', label: 'Hotel' },
+  { value: 'Park', label: 'Parque' },
+  { value: 'Transportation Hub', label: 'Centro de Transporte' },
+  { value: 'Venue', label: 'Recinto' },
+  { value: 'Hospital', label: 'Hospital' },
+  { value: 'School', label: 'Escuela' },
+  { value: 'Salon', label: 'Salón' },
+  { value: 'Bank', label: 'Banco' },
+  { value: 'Pharmacy', label: 'Farmacia' },
+  { value: 'Office Building', label: 'Edificio de Oficinas' },
 ];
 
 const eventTypes: FilterOption[] = [
@@ -113,8 +117,7 @@ export default function StatisticsPage() {
         Object.entries(filters).forEach(([key, value]) => {
           // Skip empty values
           if (!value) return;
-          
-          if (Array.isArray(value)) {
+            if (Array.isArray(value)) {
             value.forEach(v => queryParams.append(key, v));
           } else {
             // Special case for cityId in transport category
@@ -123,20 +126,24 @@ export default function StatisticsPage() {
               queryParams.append('originCityId', value);
               queryParams.append('destinationCityId', value);
             } 
-            // Ensure 'type' filter is correctly appended for infrastructure
-            else if (category === 'infrastructure' && key === 'type') {
-              queryParams.append('type', value);
-            } else {
+            // Para depurar los filtros
+            else {
+              console.log(`Añadiendo filtro: ${key}=${value} para categoría ${category}`);
               queryParams.append(key, value);
             }
           }
         });
-        
-        // Add pagination
+          // Add pagination
         queryParams.append('limit', pageSize.toString());
         queryParams.append('offset', ((page - 1) * pageSize).toString());
         
-        const url = `/api/${category}?${queryParams.toString()}`;
+        // Construir URL para hacer la petición
+        let url = `/api/${category}?${queryParams.toString()}`;
+        
+        // Registrar la URL para depuración
+        console.log(`Fetching URL: ${url}`);
+        console.log(`Filtros actuales:`, filters);
+        
         const response = await fetch(url);
         
         if (!response.ok) throw new Error(`Error fetching ${category} data`);
@@ -275,13 +282,19 @@ export default function StatisticsPage() {
     setFilters({});
     setPage(1);
   };
-
   // Handle filter change
   const handleFilterChange = (key: string, value: string | string[]) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-    }));
+    console.log(`Cambiando filtro: ${key} = ${value}`);
+    
+    setFilters(prev => {
+      const newFilters = {
+        ...prev,
+        [key]: value,
+      };
+      console.log('Nuevos filtros:', newFilters);
+      return newFilters;
+    });
+    
     setPage(1); // Reset to first page when filters change
   };
   // Handle download
@@ -554,6 +567,10 @@ export default function StatisticsPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <LocalNavbar />
+      {/* Componente de depuración para los filtros */}
+      {process.env.NODE_ENV !== 'production' && (
+        <FilterDebug filters={filters} category={category} endpoint={category} />
+      )}
       <main className="flex-grow container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-[#065F46] mb-2">Estadísticas de Greenlake City</h1>
         <p className="text-gray-600 mb-8">Explore y descargue datos detallados sobre la ciudad sostenible</p>
@@ -575,7 +592,7 @@ export default function StatisticsPage() {
               }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
+                <path fillRule="evenodd" d="M4 4a2 2 0 002-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
               </svg>
               Infraestructura
             </button>
