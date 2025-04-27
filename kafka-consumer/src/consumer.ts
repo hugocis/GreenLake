@@ -1,5 +1,5 @@
 import { Kafka, EachMessagePayload } from 'kafkajs';
-import prisma from "./lib/prisma"; 
+import prisma, { insertAirMetrics } from "./lib/prisma"; 
 import * as dotenv from 'dotenv';
 
 // Load environment variables
@@ -78,18 +78,16 @@ const handlers: Record<string, (payload: any) => Promise<void>> = {  sensor_metr
     
     // Ensure the sensor exists before inserting metrics
     await ensureSensorExists(sensorId);
-    
-    await prisma.sensor_metrics_air.create({
-      data: {
-        sensor_id: sensorId,
-        event_time: validateDate(data.event_time),
-        pm10: validateNumber(data.pm10),
-        co: validateNumber(data.co),
-        co2: validateNumber(data.co2),
-        no2: validateNumber(data.no2),
-        o3: validateNumber(data.o3),
-        so2: validateNumber(data.so2)
-      }
+      // Use the direct SQL function instead of Prisma model
+    await insertAirMetrics({
+      sensor_id: sensorId,
+      event_time: validateDate(data.event_time),
+      pm10: validateNumber(data.pm10),
+      co: validateNumber(data.co),
+      co2: validateNumber(data.co2),
+      no2: validateNumber(data.no2),
+      o3: validateNumber(data.o3),
+      so2: validateNumber(data.so2)
     });
   },  sensor_metrics_ambient: async (data) => {
     console.log('Processing ambient metrics payload:', data);
