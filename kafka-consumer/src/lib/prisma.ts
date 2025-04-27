@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv'
 dotenv.config()
 
 // Log the database URL (masking the password)
-console.log('Database URL:', process.env.DATABASE_URL?.replace(/(.*?\/\/.*?:).*?(@.*)/g, '$1[PASSWORD]$2'))
+console.log('Database URL:', process.env.DATABASE_URL_LOOPERS?.replace(/(.*?\/\/.*?:).*?(@.*)/g, '$1[PASSWORD]$2'))
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined

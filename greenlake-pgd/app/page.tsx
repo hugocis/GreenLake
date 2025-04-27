@@ -225,29 +225,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Newsletter Section */}
-      <section className="py-16 bg-[#065F46] text-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-4">
-              Mantente Informado
-            </h2>
-            <p className="mb-8">
-              Suscríbete para recibir las últimas noticias sobre eventos, atracciones y ofertas especiales en Greenlake City
-            </p>
-            <div className="flex flex-col md:flex-row gap-4 justify-center">
-              <input 
-                type="email" 
-                placeholder="Tu email" 
-                className="px-4 py-3 rounded-lg w-full md:w-auto md:flex-1 text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#34D399]"
-              />
-              <button className="bg-[#34D399] hover:bg-[#10B981] text-white font-bold py-3 px-8 rounded-lg transition-all duration-300">
-                Suscribirse
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>      {/* Footer Component */}
       <Footer />
     </div>
   );
