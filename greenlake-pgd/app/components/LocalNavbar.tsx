@@ -48,14 +48,21 @@ export default function LocalNavbar() {
               }`}
             >
               Estadísticas
-            </Link>
-            <Link 
+            </Link>            <Link 
               href="/map" 
               className={` text-gray-600 hover:text-[#10B981] transition-colors duration-300 ${
                 pathname === '/map' ? 'text-[#10B981] font-medium' : ''
               }`}
             >
               Mapa Interactivo
+            </Link>
+            <Link 
+              href="/hydraulic-map" 
+              className={` text-gray-600 hover:text-[#10B981] transition-colors duration-300 ${
+                pathname === '/hydraulic-map' ? 'text-[#10B981] font-medium' : ''
+              }`}
+            >
+              Eficiencia Hidráulica
             </Link>
             <Link 
               href="/config" 
@@ -160,8 +167,7 @@ export default function LocalNavbar() {
               onClick={() => setIsMenuOpen(false)}
             >
               Estadísticas
-            </Link>
-            <Link
+            </Link>            <Link
               href="/map"
               className={`block px-4 py-2 text-gray-700 hover:bg-[#F0FDF9] hover:text-[#10B981] ${
                 pathname === '/map' ? 'bg-[#F0FDF9] text-[#10B981]' : ''
@@ -169,6 +175,15 @@ export default function LocalNavbar() {
               onClick={() => setIsMenuOpen(false)}
             >
               Mapa Interactivo
+            </Link>
+            <Link
+              href="/hydraulic-map"
+              className={`block px-4 py-2 text-gray-700 hover:bg-[#F0FDF9] hover:text-[#10B981] ${
+                pathname === '/hydraulic-map' ? 'bg-[#F0FDF9] text-[#10B981]' : ''
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Eficiencia Hidráulica
             </Link>
             <Link
               href="/config"

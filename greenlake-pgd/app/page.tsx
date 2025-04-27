@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import Footer from "./components/Footer";
 import RestaurantSection from "./components/RestaurantSection";
 import HotelSection from "./components/HotelSection";
@@ -8,6 +12,24 @@ import ParkSection from "./components/ParkSection";
 import LocalNavbar from "./components/LocalNavbar";
 
 export default function Home() {
+  const router = useRouter();
+
+  // Efecto para redirigir según el rol del usuario
+  useEffect(() => {
+    // Verificar el rol guardado en localStorage
+    const userRole = localStorage.getItem('user-role');
+    
+    // Redirigir según el rol
+    if (userRole === 'researcher') {
+      router.push('/statistics');
+    } else if (userRole === 'entrepreneur') {
+      router.push('/hydraulic-map');
+    } else if (userRole === 'citizen') {
+      router.push('/map');
+    }
+    // Si no hay rol definido, se queda en la página principal
+  }, [router]);
+  
   return (
     <div className="min-h-screen flex flex-col">
       {/* Navbar - Using local authentication system */}

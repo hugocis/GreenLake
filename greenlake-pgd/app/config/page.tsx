@@ -5,20 +5,19 @@ import { useState, useEffect } from 'react';
 import SimpleFooter from '../components/SimpleFooter';
 import LocalNavbar from '../components/LocalNavbar';
 
-type UserRole = 'citizen' | 'researcher';
+type UserRole = 'citizen' | 'researcher' | 'entrepreneur';
 
 export default function ConfigPage() {
   const router = useRouter();
   const [role, setRole] = useState<UserRole>('citizen');
   const [name, setName] = useState<string>('');
   const [saved, setSaved] = useState(false);
-
   // Cargar la configuración almacenada al iniciar la página
   useEffect(() => {
     const savedRole = localStorage.getItem('user-role');
     const savedName = localStorage.getItem('user-name');
     
-    if (savedRole === 'citizen' || savedRole === 'researcher') {
+    if (savedRole === 'citizen' || savedRole === 'researcher' || savedRole === 'entrepreneur') {
       setRole(savedRole);
     }
     
@@ -38,12 +37,16 @@ export default function ConfigPage() {
       setSaved(false);
     }, 3000);
   };
-
   // Ir a la página inicial según el rol seleccionado
   const goToHome = () => {
-    // Si es ciudadano, redirigir al mapa
-    // Si es investigador, redirigir a estadísticas
-    const path = role === 'citizen' ? '/map' : '/statistics';
+    let path = '/map'; // Por defecto
+
+    if (role === 'researcher') {
+      path = '/statistics';
+    } else if (role === 'entrepreneur') {
+      path = '/hydraulic-map';
+    }
+    
     router.push(path);
   };
 
@@ -75,8 +78,7 @@ export default function ConfigPage() {
             {/* Selección de rol */}
             <div>
               <h2 className="text-lg font-medium text-gray-800 mb-4">Selecciona tu perfil</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Opción Ciudadano */}
                 <div
                   className={`border rounded-lg p-5 cursor-pointer transition-all ${
@@ -134,6 +136,36 @@ export default function ConfigPage() {
                   <p className="mt-2 text-sm text-gray-600 pl-6">
                     Como investigador, verás primero las estadísticas y visualizaciones de datos. 
                     Ideal para análisis de sostenibilidad y toma de decisiones basada en datos.
+                  </p>
+                </div>
+
+                {/* Opción Analista Hidráulico */}
+                <div
+                  className={`border rounded-lg p-5 cursor-pointer transition-all ${
+                    role === 'entrepreneur' 
+                      ? 'border-[#10B981] ring-2 ring-[#10B981]/20 bg-[#F0FDF9]' 
+                      : 'border-gray-200 hover:border-[#10B981]/50'
+                  }`}
+                  onClick={() => setRole('entrepreneur')}
+                >
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      id="hydraulic-analyst"
+                      checked={role === 'entrepreneur'}
+                      onChange={() => setRole('entrepreneur')}
+                      className="h-4 w-4 text-[#10B981] border-gray-300 focus:ring-[#10B981]"
+                    />
+                    <label 
+                      htmlFor="hydraulic-analyst" 
+                      className="ml-2 block text-lg font-medium text-gray-800 cursor-pointer"
+                    >
+                      Analista Hidráulico
+                    </label>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-600 pl-6">
+                    Como empresario, verás primero el mapa de eficiencia hidráulica.
+                    Ideal para monitorear y optimizar la generación de energía de los recursos hídricos.
                   </p>
                 </div>
               </div>

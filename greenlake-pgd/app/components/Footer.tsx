@@ -15,11 +15,11 @@ export default function Footer() {
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold text-[#065F46] mb-4">Enlaces Rápidos</h3>
-            <ul className="space-y-2">
+            <h3 className="text-lg font-semibold text-[#065F46] mb-4">Enlaces Rápidos</h3>            <ul className="space-y-2">
               <li><Link href="/" className="text-gray-600 hover:text-[#10B981]">Inicio</Link></li>
               <li><Link href="/statistics" className="text-gray-600 hover:text-[#10B981]">Estadísticas</Link></li>
               <li><Link href="/map" className="text-gray-600 hover:text-[#10B981]">Mapa Interactivo</Link></li>
+              <li><Link href="/hydraulic-map" className="text-gray-600 hover:text-[#10B981]">Eficiencia Hidráulica</Link></li>
             </ul>
           </div>
           
