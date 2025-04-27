@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, KeyboardEvent, ChangeEvent } from 'react';
-import axios from 'axios';
 
 interface Message {
   type: 'user' | 'bot';
@@ -22,22 +21,45 @@ const ChatbotDialog: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:3000/ask', {
-        question: input
+      const response = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: input }),
       });
 
-      const { sql, data, message } = response.data;
+      const data = await response.json();
 
-      let botResponse = `📄 SQL: ${sql}`;
-      if (data.length > 0) {
-        botResponse += `\n✅ Found ${data.length} records.`;
-      } else {
+      const { sql, data: records, message } = data;
+
+        let botResponse = `📄 SQL: ${sql}`;
+
+        if (records && records.length > 0) {
+        botResponse += `\n📊 Results:\n`;
+
+        records.slice(0, 5).forEach((item: any, index: number) => {
+            botResponse += `\n${index + 1}. `;
+
+            // Mostrar solo campos clave si es posible
+            const keys = Object.keys(item);
+            if (keys.length <= 3) {
+            botResponse += keys.map(k => `${k}: ${item[k]}`).join(', ');
+            } else {
+            botResponse += JSON.stringify(item, null, 2);
+            }
+        });
+
+        if (records.length > 5) {
+            botResponse += `\n...and ${records.length - 5} more records.`;
+        }
+        
+        } else {
         botResponse += `\n⚠️ ${message || 'No records found.'}`;
-      }
+        }
 
-      setMessages([...newMessages, { type: 'bot' as const, text: botResponse }]);
+
+      setMessages([...newMessages, { type: 'bot', text: botResponse }]);
     } catch (err) {
-      setMessages([...newMessages, { type: 'bot' as const, text: '❌ Error processing your request.' }]);
+      setMessages([...newMessages, { type: 'bot', text: '❌ Error processing your request.' }]);
     }
     setLoading(false);
   };
@@ -56,16 +78,22 @@ const ChatbotDialog: React.FC = () => {
     <>
       {/* Botón flotante */}
       <button
-        className="fixed bottom-6 right-6 bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 z-40"
+        className="fixed bottom-6 right-6 bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-transform transform hover:scale-110 z-40"
         onClick={() => setIsOpen(true)}
       >
-        💬 Chat
+        💬
       </button>
 
       {/* Modal Dialog */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white w-96 rounded-xl shadow-lg flex flex-col">
+        <div
+          className="fixed inset-0 bg-gray-0 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={() => setIsOpen(false)}
+        >
+          <div
+            className="bg-white w-150 h- 90 rounded-xl shadow-lg flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center bg-green-600 text-white p-3 rounded-t-xl">
               <span>GreenBot 🤖</span>
               <button onClick={() => setIsOpen(false)} className="hover:text-gray-300">✖️</button>
