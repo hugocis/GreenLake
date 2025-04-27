@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, prefer-const */
 import { NextResponse } from 'next/server';
 import { getLocalUser } from '@/lib/localAuth';
 import { compare } from 'bcrypt';

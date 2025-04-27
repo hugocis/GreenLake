@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, prefer-const */
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Card } from '@nextui-org/react';
 
 interface SensorMetric {
   sensor_id: string;

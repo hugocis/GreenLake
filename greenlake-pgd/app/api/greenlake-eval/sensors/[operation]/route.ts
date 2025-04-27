@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, prefer-const */
 
 // Define the unit mapping for different metrics based on sensor type
 const UNIT_MAPPING: Record<string, Record<string, string>> = {

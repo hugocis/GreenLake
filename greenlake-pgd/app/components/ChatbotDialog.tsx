@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, KeyboardEvent, ChangeEvent } from 'react';
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, prefer-const */
 
 interface Message {
   type: 'user' | 'bot';

@@ -49,7 +49,7 @@ export default function LocalNavbar() {
             >
               Estadísticas
             </Link>            <Link 
-              href="/map" 
+              href="/ciudadano/mapa" 
               className={` text-gray-600 hover:text-[#10B981] transition-colors duration-300 ${
                 pathname === '/map' ? 'text-[#10B981] font-medium' : ''
               }`}
@@ -63,14 +63,6 @@ export default function LocalNavbar() {
               }`}
             >
               Eficiencia Hidráulica
-            </Link>
-            <Link 
-              href="/config" 
-              className={`text-gray-600 hover:text-[#10B981] transition-colors duration-300 ${
-                pathname === '/config' ? 'text-[#10B981] font-medium' : ''
-              }`}
-            >
-              Configuración
             </Link>
             
             {isAuthenticated ? (

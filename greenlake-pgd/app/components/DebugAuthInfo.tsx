@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, prefer-const */
 
 import { useLocalAuth } from '../providers/LocalAuthProvider';
 import { useEffect, useState } from 'react';

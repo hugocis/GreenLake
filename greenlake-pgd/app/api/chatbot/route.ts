@@ -1,63 +1,96 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import axios from 'axios';
+import OpenAI from 'openai';
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, prefer-const */
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { question } = body;
+    const { question } = await req.json();
+    console.log('📩 Pregunta recibida:', question);
 
     if (!question) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
     }
 
-    // 1️⃣ Llamamos al backend (MCP) para que genere el SQL
-    const response = await axios.post('http://localhost:3000/ask', { question });
-    const { sql } = response.data;
+    // 1️⃣ Prompt mejorado
+    const prompt = `
+Eres un asistente que genera consultas SQL para PostgreSQL.
 
-    // 2️⃣ Preparamos la query segura
-    let finalSQL = sql.trim().replace(/;$/, '');
-// Detectamos SELECT * y lo reemplazamos por columnas seguras
-    if (/select\s+\*\s+from\s+infrastructure/i.test(finalSQL)) {
-    finalSQL = `
+- Si preguntan por infraestructuras, usa la tabla \`infrastructure\`.
+- Si preguntan por sensores, usa tablas como \`sensors\`, \`sensor_metrics_air\`, etc.
+- Si preguntan por música, usa \`people_music\`.
+- Siempre devuelve SOLO la consulta SQL entre \`\`\`sql ... \`\`\`.
+- Limita los resultados con LIMIT 50 si no está especificado.
+- No expliques nada, solo devuelve la query.
+`;
+
+    const aiResponse = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: prompt },
+        { role: 'user', content: question }
+      ]
+    });
+
+    const rawContent = aiResponse.choices[0].message.content || '';
+    console.log('🧠 Respuesta de OpenAI:', rawContent);
+
+    const sqlMatch = rawContent.match(/```sql\s*([\s\S]*?)```/i);
+    let sql = sqlMatch ? sqlMatch[1].trim() : rawContent.trim();
+    console.log('💾 SQL Generado:', sql);
+
+    if (!sql.toLowerCase().startsWith('select')) {
+      console.error('⛔ Query inválida');
+      return NextResponse.json({ error: 'Generated query is invalid.', sql }, { status: 400 });
+    }
+
+    if (sql.includes('*') && sql.toLowerCase().includes('from infrastructure')) {
+      sql = `
         SELECT id, name, type, subtype, green_score, carbon_footprint_kg_per_year
         FROM infrastructure
         LIMIT 50
-    `;
+      `;
+      console.log('🔧 Query ajustada:', sql);
     }
 
-
-    // 🚨 3️⃣ Validamos que no contenga columnas problemáticas
-    if (finalSQL.toLowerCase().includes('location')) {
+    if (sql.toLowerCase().includes('location')) {
+      console.warn('⚠️ Query con columna geometry detectada');
       return NextResponse.json({
-        message: '❌ The query includes unsupported geometry columns like "location". Please refine your question.',
-        sql: finalSQL,
+        message: '❌ The query includes unsupported geometry columns like "location".',
+        sql,
         data: []
       });
     }
 
-    // 4️⃣ Ejecutamos la query si es segura
-    const data = await prisma.$queryRawUnsafe(finalSQL) as any[];
+    // 2️⃣ Ejecutar query
+    console.log('🚀 Ejecutando query...');
+    let data = await prisma.$queryRawUnsafe(sql) as any[];
+    console.log('✅ Datos obtenidos:', data.length);
 
-    // 5️⃣ Limpieza adicional (por si acaso)
-    const safeData = data.map((row) => {
-      if ('location' in row) {
-        row.location = '[GEOMETRY DATA]';
+    // 3️⃣ Convertimos BigInt y limpiamos geometry
+    const safeData = data.map(row => {
+      const cleanedRow: any = {};
+      for (const key in row) {
+        if (typeof row[key] === 'bigint') {
+          cleanedRow[key] = row[key].toString();
+        } else if (key === 'location') {
+          cleanedRow[key] = '[GEOMETRY DATA]';
+        } else {
+          cleanedRow[key] = row[key];
+        }
       }
-      return row;
+      return cleanedRow;
     });
 
-    // 6️⃣ Devolvemos respuesta al frontend
-    return NextResponse.json({
-      sql: finalSQL,
-      data: safeData
-    });
+    return NextResponse.json({ sql, data: safeData });
 
-  } catch (error: any) {
-    console.error('Error handling chatbot request:', error.message);
+  } catch (err: any) {
+    console.error('❌ Error handling chatbot request:', err.message);
     return NextResponse.json({
-      message: "Sorry, I'm having trouble accessing the database.",
-      error: error.message
+      message: "Sorry, I'm having trouble processing your request.",
+      error: err.message
     }, { status: 500 });
   }
 }

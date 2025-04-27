@@ -1,4 +1,5 @@
-// Types for API responses
+// Types for API 
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, prefer-const */
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;

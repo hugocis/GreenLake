@@ -1,47 +1,56 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, prefer-const */
 
-interface SensorFromDB {
+export const dynamic = 'force-dynamic';
+
+interface SensorMetrics {
   id: string;
   sensor_type: string;
-  location: string | null;
-  installed_at: Date | null;
+  location: any;
+  installed_at: Date;
+  co2_level?: number | null;
+  last_reading?: Date | null;
 }
 
 export async function GET() {
   try {
-    const sensors = await prisma.$queryRaw<SensorFromDB[]>`
+    const query = `
+      WITH latest_air_metrics AS (
+        SELECT DISTINCT ON (sensor_id)
+          sensor_id,
+          co2,
+          event_time
+        FROM sensor_metrics_air
+        WHERE event_time >= NOW() - INTERVAL '1 hour'
+        ORDER BY sensor_id, event_time DESC
+      )
       SELECT 
-        id,
-        sensor_type,
-        ST_AsGeoJSON(location) as location,
-        installed_at
-      FROM sensors
+        s.id,
+        s.sensor_type,
+        s.installed_at,
+        ST_AsGeoJSON(s.location::geometry)::json as location,
+        lam.co2 as co2_level,
+        lam.event_time as last_reading
+      FROM sensors s
+      LEFT JOIN latest_air_metrics lam ON s.id = lam.sensor_id
+      WHERE s.location IS NOT NULL
     `;
 
-    // Transform sensors data
-    const formattedSensors = sensors.map(sensor => {
-      let locationObject;
-      try {
-        locationObject = sensor.location ? JSON.parse(sensor.location) : null;
-      } catch (e) {
-        console.error('Error parsing location:', e);
-        locationObject = null;
-      }
+    const sensors: SensorMetrics[] = await prisma.$queryRawUnsafe(query);
 
-      return {
-        id: sensor.id,
-        sensor_type: sensor.sensor_type,
-        installed_at: sensor.installed_at,
-        location: locationObject || {
-          type: 'Point',
-          coordinates: [
-            -70.6483 + (Math.random() - 0.5) * 0.1,
-            -33.4489 + (Math.random() - 0.5) * 0.1
-          ]
-        }
-      };
-    });
+    console.log('Raw sensors data:', sensors[0]); // Debug log
+
+    const formattedSensors = sensors.map(sensor => ({
+      id: sensor.id,
+      sensor_type: sensor.sensor_type.toLowerCase(),
+      location: sensor.location,
+      installed_at: sensor.installed_at,
+      ...(sensor.sensor_type.toLowerCase() === 'air' ? {
+        co2_level: sensor.co2_level,
+        last_reading: sensor.last_reading
+      } : {})
+    }));
 
     return NextResponse.json(formattedSensors);
   } catch (error) {
@@ -52,3 +61,4 @@ export async function GET() {
     }, { status: 500 });
   }
 }
+

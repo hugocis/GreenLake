@@ -160,7 +160,7 @@ export default function ConfigPage() {
                       htmlFor="hydraulic-analyst" 
                       className="ml-2 block text-lg font-medium text-gray-800 cursor-pointer"
                     >
-                      Analista Hidráulico
+                      Empresario
                     </label>
                   </div>
                   <p className="mt-2 text-sm text-gray-600 pl-6">
