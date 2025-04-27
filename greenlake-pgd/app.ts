@@ -1,5 +1,5 @@
 import express from 'express';
-import { askController } from './controllers/ask.controller';
+import { askController } from '../greenlake-pgd/controllers/ask.controller.ts';
 
 const app = express();
 app.use(express.json());
